@@ -1,0 +1,808 @@
+---
+title: "Tuberculosis, un desafío en las poblaciones indígenas y afroperuanas"
+subtitle: "Análisis de datos del Ministerio de Salud (MINSA)"
+date: last-modified
+author: "Subdirección de Medicina Tradicional, Interculturalidad e Investigación Social (SUMEC-CENSI)"
+format: 
+  html:
+    theme: cosmo
+    toc: true
+    page-layout: full
+    code-fold: true
+execute:
+  warning: false
+  message: false
+footer: "Fuente de datos: Sistema HISS-MINSA | Fecha de corte: 03/2024"
+---
+
+La tuberculosis es una enfermedad infecciosa y aunque es prevenible y tratable sigue afectando a miles de personas. Es producida por el Mycobacterium tuberculosis que afecta sobre todo a los pulmones, pero también a otros órganos como la piel, huesos, la columna vertebral, entre otros.
+
+Se analizo la data del HIS del Ministerio de Salud desde el 2019 hasta el 2022 y se puede observar que los registros del diagnóstico de tuberculosis se han reducido por el impacto de la pandemia por el Covid -19.
+
+Según el CIE 10, Clasificación Estadística Internacional de Enfermedades y Problemas Relacionados con la Salud, elaborado por la Organización Mundial de la Salud, en tuberculosis considera estas categorías:
+
+-   Tuberculosis respiratoria, confirmada bacteriológica e histológicamente
+
+-   Tuberculosis respiratoria, no confirmada bacteriológica o histológicamente
+
+-   Tuberculosis del sistema nervioso
+
+-   Tuberculosis de otros órganos
+
+-   Tuberculosis Miliar
+
+## **Tuberculosis en poblaciones indígenas, afroperuanas y mestizas 2019-2025**
+
+Desde el 2019 al 2022 el porcentaje alcanzado fue por encima del 98% del total de casos. En el 2023, regsitró 97.5%. En las poblaciones amazónicas, el 2023 casi duplicó las atenciones del año anterior., de 1.1% pasó a 2%. En las poblaciones andinas y afroperuana presentan un menor registro de casos, especialmente esta última.
+
+::: panel-tabset
+## Gráfico
+
+[\^1\]
+
+```{r}
+#| warning: false
+library(tidyverse)
+library(plotly)
+library(DT)
+
+# --- FUNCIÓN AUXILIAR PARA TABLAS DE DESCARGA ---
+# Esta función crea estandariza el botón de Excel para todos los gráficos
+make_download_table <- function(data_input, filename_label = "datos") {
+  datatable(
+    data_input,
+    extensions = 'Buttons',
+    rownames = FALSE,
+    options = list(
+      dom = 'Bfrtip',
+      buttons = list(
+        list(extend = 'excel', filename = filename_label, title = filename_label),
+        list(extend = 'csv', filename = filename_label)
+      ),
+      pageLength = 5, # Pocas filas para no ocupar mucho espacio
+      scrollX = TRUE,
+      language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')
+    )
+  )
+}
+
+# 1. DATOS Y LIMPIEZA
+data_tuberculosis <- tribble(
+  ~Categoria, ~`2019`, ~`2020`, ~`2021`, ~`2022`, ~`2023`, ~`2024`, ~`2025`,
+  "Afroperuano", 18, 26, 32, 14, 5, 5, 4,
+  "Andino", 227, 188, 222, 355, 440, 425, 318,
+  "Amazónico", 545, 439, 508, 907, 1934, 1188, 602,
+  "Mestizo", 86657, 56729, 74435, 83262, 93822, 83418, 64068
+) %>%
+  pivot_longer(
+    cols = -Categoria, 
+    names_to = "Año",  # <--- CAMBIO AQUÍ: Usamos "Año" directo
+    values_to = "Casos"
+  ) %>%
+  mutate(
+    `Año` = as.numeric(`Año`), # Usamos backticks ` ` para referirnos a la variable
+    Categoria = as.factor(Categoria)
+  )
+
+# 2. COLORES
+colores_tb <- c(
+  "Afroperuano" = "#a193f3",
+  "Andino" = "#eb8484",
+  "Amazónico" = "#ffe281",
+  "Mestizo" = "#48ffa7"
+)
+
+# 3. GRÁFICO CON ETIQUETA CORREGIDA
+g_tb <- ggplot(data_tuberculosis, aes(x = `Año`, y = Casos, fill = Categoria)) + # <--- Cambio en aes()
+  geom_area(alpha = 0.8, color = "white", size = 0.5) +
+  geom_point(size = 1, color = "black", alpha = 0.3) +
+  
+  facet_wrap(~Categoria, scales = "free_y", ncol = 2) +
+  
+  scale_fill_manual(values = colores_tb) +
+  scale_x_continuous(breaks = 2019:2025) +
+  labs(
+    title = "Tuberculosis: Evolución de Casos por Autoidentificación Étnica",
+    subtitle = "Comparativa 2019 - 2025 (Escalas independientes)",
+    x = "", # Dejamos vacío el eje X para limpieza visual
+    y = "Número de Casos"
+  ) +
+  theme_minimal() +
+  theme(
+    strip.text = element_text(face = "bold", size = 12),
+    strip.background = element_rect(fill = "#f5f5f5", color = NA),
+    legend.position = "none",
+    panel.grid.minor = element_blank()
+  )
+
+# 4. INTERACTIVO
+ggplotly(g_tb, tooltip = c("x", "y")) %>%
+  layout(
+    hovermode = "x unified",
+    margin = list(t = 80)
+  )
+
+```
+
+## Datos Fuente
+
+```{r}
+make_download_table(data_tuberculosis, "data_tuberculosis")
+```
+:::
+
+## **Categorías de Tuberculosis en poblaciones indígenas, afroperuanas y mestizas 2019-2025 (según CIE 10)**
+
+En los pueblos de la Amazonía, la categoría  de tuberculosis con mayores casos, desde el 2020 al 2022, fue la tuberculosis respiratoria, confirmada bacteriológica o histológicamente y el 2023, fue la tuberculosis respiratoria, no confirmada bacteriológica o histológicamente..En las poblaciones andinas, el tipo, la Tuberculosis respiratoria, confirmada bacteriológica e histológicamente tuvo mayores registros el desde el 2021 al 2023. 
+
+::: panel-tabset
+## Gráfico
+
+[\^1\]
+
+```{r}
+library(tidyverse)
+library(plotly)
+library(stringr)
+
+# 1. RECONSTRUCCIÓN DE DATOS
+# He extraído y limpiado los datos del código fuente de Flourish
+data_tipos_tb <- tribble(
+  ~Grupo, ~Tipo_TB, ~`2019`, ~`2020`, ~`2021`, ~`2022`, ~`2023`, ~`2024`, ~`2025`,
+  "Afroperuana", "TB Respiratoria (Confirmada)", 9, 14, 9, 8, 3, 3, 4,
+  "Afroperuana", "TB Respiratoria (No Confirmada)", 4, 0, 1, 4, 2, 0, 0,
+  "Afroperuana", "TB Otros órganos", 5, 0, 0, 2, 0, 1, 0,
+  "Afroperuana", "TB Miliar", 0, 12, 22, 0, 0, 1, 0,
+  
+  "Amazónica", "TB Respiratoria (Confirmada)", 261, 263, 254, 578, 616, 808, 477,
+  "Amazónica", "TB Respiratoria (No Confirmada)", 269, 168, 231, 306, 1278, 331, 97,
+  "Amazónica", "TB Sist. Nervioso", 4, 4, 2, 5, 7, 6, 1,
+  "Amazónica", "TB Otros órganos", 5, 3, 10, 11, 26, 27, 22,
+  "Amazónica", "TB Miliar", 6, 1, 11, 7, 7, 16, 5,
+  
+  "Andina", "TB Respiratoria (Confirmada)", 79, 76, 103, 206, 266, 272, 189,
+  "Andina", "TB Respiratoria (No Confirmada)", 122, 95, 83, 105, 121, 97, 61,
+  "Andina", "TB Sist. Nervioso", 5, 8, 5, 24, 13, 14, 23,
+  "Andina", "TB Otros órganos", 16, 5, 28, 18, 31, 39, 36,
+  "Andina", "TB Miliar", 5, 4, 3, 2, 9, 3, 9
+) %>%
+  pivot_longer(
+    cols = `2019`:`2025`, 
+    names_to = "Año", 
+    values_to = "Casos"
+  ) %>%
+  mutate(
+    # Simplificamos nombres largos para mejor visualización
+    Tipo_TB_Wrap = str_wrap(Tipo_TB, width = 25),
+    Grupo = factor(Grupo, levels = c("Afroperuana", "Amazónica", "Andina"))
+  )
+
+# 2. CREACIÓN DEL GRÁFICO
+g_tipos <- ggplot(data_tipos_tb, aes(x = Casos, y = Tipo_TB_Wrap, fill = Año)) +
+  geom_col(position = "dodge") + # Barras agrupadas una al lado de otra
+  
+  # Facetas para separar por etnia
+  facet_wrap(~Grupo, scales = "free", ncol = 1) + 
+  
+  # Usamos una paleta viridis para distinguir los años claramente
+  scale_fill_viridis_d(option = "plasma", direction = -1) +
+  
+  labs(
+    title = "Tipos de Tuberculosis por Grupo Étnico (2019-2025)",
+    x = "Número de Casos",
+    y = ""
+  ) +
+  theme_minimal() +
+  theme(
+    strip.text = element_text(face = "bold", size = 12),
+    strip.background = element_rect(fill = "#edd0fb", color = NA), # Color lila del original
+    axis.text.y = element_text(size = 9),
+    legend.position = "bottom"
+  )
+
+# 3. INTERACTIVIDAD
+# Aumentamos la altura (height) porque al ser 3 facetas verticales necesita espacio
+ggplotly(g_tipos, height = 900, tooltip = c("x", "fill", "y")) %>%
+  layout(
+    legend = list(orientation = "h", x = 0, y = -0.05),
+    margin = list(l = 10) # Margen izquierdo automático
+  )
+```
+## Datos Fuente
+
+```{r}
+make_download_table(data_tipos_tb, "data_tipos_tb")
+```
+
+:::
+
+## **Tuberculosis en poblaciones indígenas, afroperuanas y mestizas por sexo 2019-2025 **
+
+El mayor registro de casos en la población afroperuana se ha dado en las mujeres. Se observa especialmente en el total de los resultados, el 2021, casi el 100% son mujeres.
+
+En las poblaciones amazónicas, desde el 2019 al 2021, los hombres son los más afectados por la tuberculosis. El 2022 y, especialmente, el 2023, fueron las mujeres con el 58%.
+
+En los pueblos andinos, se observa una leve diferencia, en los casos de mujeres y hombre, el 2019 y 2020, hubo más registros de mujeres. Desde el 2021 al 2023 se registraron más casos en hombres.  
+
+::: panel-tabset
+## Gráfico
+
+
+```{r}
+#| warning: false
+library(rio)
+data_tb_sexo<- import("data-Tt9rl.csv")
+
+library(tidyverse)
+library(plotly)
+
+# 1. DATOS ORIGINALES
+data_tb_sexo <- tribble(
+  ~X.1, ~Año, ~M, ~F,
+  "Población afroperuana", 2019, 6, 12,
+  "Población afroperuana", 2020, 9, 17,
+  "Población afroperuana", 2021, 1, 31,
+  "Población afroperuana", 2022, 2, 12,
+  "Población afroperuana", 2023, 1, 4,
+  "Población afroperuana", 2024, 4, 1,
+  "Población afroperuana", 2025, 1, 3,
+  "Poblaciones amazónicas", 2019, 280, 265,
+  "Poblaciones amazónicas", 2020, 256, 183,
+  "Poblaciones amazónicas", 2021, 261, 247,
+  "Poblaciones amazónicas", 2022, 416, 491,
+  "Poblaciones amazónicas", 2023, 820, 1114,
+  "Poblaciones amazónicas", 2024, 619, 569,
+  "Poblaciones amazónicas", 2025, 282, 320,
+  "Poblaciones andinas", 2019, 108, 119,
+  "Poblaciones andinas", 2020, 84, 104,
+  "Poblaciones andinas", 2021, 113, 109,
+  "Poblaciones andinas", 2022, 204, 151,
+  "Poblaciones andinas", 2023, 250, 190,
+  "Poblaciones andinas", 2024, 261, 164,
+  "Poblaciones andinas", 2025, 191, 127
+)
+
+# 2. PROCESAMIENTO Y CÁLCULO DE POSICIONES
+plot_data <- data_tb_sexo %>%
+  rename(Poblacion = X.1) %>%
+  pivot_longer(cols = c("M", "F"), names_to = "Sexo", values_to = "Casos") %>%
+  group_by(Poblacion) %>%
+  mutate(
+    # Calculamos el máximo por grupo para dar un margen proporcional
+    Max_Grupo = max(Casos),
+    Offset = Max_Grupo * 0.08, # 15% del ancho máximo como espacio para el número
+    
+    # Posición de la barra (Hombres negativo, Mujeres positivo)
+    Casos_Plot = ifelse(Sexo == "M", -Casos, Casos),
+    
+    # SOLUCIÓN DEFINITIVA PARA TEXTO: Calculamos la coordenada X exacta del texto
+    # Si es M, restamos el offset (más a la izquierda). Si es F, sumamos (más a la derecha).
+    Texto_X = ifelse(Sexo == "M", Casos_Plot - Offset, Casos_Plot + Offset),
+    
+    Año = factor(Año, levels = rev(2019:2025)),
+    Sexo = factor(Sexo, levels = c("M", "F"))
+  ) %>%
+  ungroup()
+
+# 3. LÍMITES PARA CENTRAR EL CERO
+# Aumentamos el multiplicador a 1.6 (60% extra) para asegurar que el texto quepa
+dummy_limits <- plot_data %>%
+  group_by(Poblacion) %>%
+  summarise(limit = max(abs(Casos)) * 1.6) %>% 
+  crossing(direction = c(-1, 1)) %>%
+  mutate(x = limit * direction)
+
+# 4. COLORES
+colores_sexo <- c("M" = "#d5a6e0", "F" = "#ffdf80")
+
+# 5. GRÁFICO
+g_piramide <- ggplot(plot_data, aes(y = Año, fill = Sexo)) +
+  # Barras: Usamos Casos_Plot para dibujar
+  geom_col(aes(x = Casos_Plot, 
+               text = paste("Año:", Año, "<br>Sexo:", Sexo, "<br>Casos:", Casos)), 
+           width = 0.8) +
+  
+  # Capa invisible para expandir ejes simétricamente
+  geom_blank(data = dummy_limits, aes(x = x, y = Inf, fill = NULL)) +
+  
+  # Etiquetas: Usamos Texto_X (la posición calculada manualmente fuera de la barra)
+  geom_text(aes(x = Texto_X, label = Casos), 
+            size = 3, color = "#333333", fontface = "bold",
+            hjust = 0.5) + # Centrado en su nueva posición calculada
+  
+  facet_wrap(~Poblacion, ncol = 1, scales = "free_x") +
+  
+  scale_fill_manual(values = colores_sexo) +
+  scale_x_continuous(labels = abs) + 
+  
+  labs(
+    title = "Tuberculosis en población afroperuana, amazónica y andina por sexo",
+    subtitle = "2019-2025",
+    x = "Número de Casos",
+    y = ""
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14), # Título centrado
+    strip.text = element_text(face = "bold", size = 12, hjust = 0.5), # Subtítulos centrados
+    strip.background = element_blank(),
+    panel.grid.major.y = element_blank(),
+    legend.position = "bottom", # Se gestiona en plotly
+    axis.text.y = element_text(face = "bold")
+  )
+
+# 6. INTERACTIVIDAD
+ggplotly(g_piramide, tooltip = "text", height = 800) %>%
+  layout(
+    legend = list(
+      orientation = "h",
+      xanchor = "center",
+      x = 0.5,
+      y = -0.05, # Leyenda abajo
+      title = list(text = "")
+    ),
+    margin = list(t = 80, l = 80, b = 80)
+  )
+```
+## Datos Fuente
+
+```{r}
+make_download_table(data_tb_sexo, "data_tb_sexo")
+```
+
+:::
+
+## **Tuberculosis en poblaciones indígenas, afroperuanas y mestizas por curso de vida 2019-2025 **
+
+En las poblaciones andinas y amazónicas los mayores registros se dan en los adultos de 30 a 59 años, en todo el periodo analizado. Desde el 2019 al 2022, en las poblaciones amazónicas es seguido por los jóvenes; el 2023 hubo más registros de adultos mayores. Asimismo, desde el 2022, se observa se observa un mayor incremento en adolescentes. En  cambio, en las poblaciones andinas, los adultos de 30 a 59 años, es seguido por los adultos mayores desde el 2019 al 2020 y desde el 2022 al 2023.  
+
+::: panel-tabset
+## Gráfico
+
+
+```{r}
+#| warning: false
+library(tidyverse)
+library(plotly)
+
+# 1. SINCRONIZACIÓN DE NIVELES (Vital para evitar el error de colores)
+niveles_oficiales <- c(
+  "< 01m", "01-11m", "01-05a", "06-11a", 
+  "12-17a", "18-29a", "30-59a", "60a >"
+)
+
+# 2. DEFINICIÓN DE COLORES
+colores_etapa <- setNames(
+  c("#9e0142", "#d53e4f", "#f46d43", "#fdae61", 
+    "#fee08b", "#e6f598", "#66c2a5", "#3288bd"),
+  niveles_oficiales
+)
+
+# 3. DATOS
+raw_data <- tribble(
+  ~Etnia, ~Etapa, ~`2019`, ~`2020`, ~`2021`, ~`2022`, ~`2023`, ~`2024`, ~`2025`,
+  "Afroperuana", "01-11m", 0, 0, 0, 1, 0, 0, 0,
+  "Afroperuana", "06-11a", 1, 0, 0, 0, 0, 0, 0,
+  "Afroperuana", "12-17a", 1, 0, 0, 1, 1, 0, 0,
+  "Afroperuana", "18-29a", 9, 21, 31, 2, 0, 0, 0,
+  "Afroperuana", "30-59a", 5, 5, 1, 9, 3, 4, 3,
+  "Afroperuana", "60a >",  2, 0, 0, 1, 1, 1, 1,
+  "Amazónica", "< 01m",  1, 0, 1, 0, 0, 0, 0,
+  "Amazónica", "01-11m", 1, 1, 6, 4, 2, 3, 0,
+  "Amazónica", "01-05a", 11, 9, 10, 20, 19, 24, 9,
+  "Amazónica", "06-11a", 18, 17, 15, 15, 27, 23, 13,
+  "Amazónica", "12-17a", 35, 41, 43, 72, 144, 73, 48,
+  "Amazónica", "18-29a", 127, 100, 109, 175, 431, 270, 165,
+  "Amazónica", "30-59a", 256, 211, 230, 456, 737, 552, 249,
+  "Amazónica", "60a >",  96, 60, 94, 165, 574, 243, 118,
+  "Andina", "01-11m", 0, 1, 0, 2, 0, 5, 0,
+  "Andina", "01-05a", 5, 0, 1, 7, 6, 13, 2,
+  "Andina", "06-11a", 7, 5, 15, 1, 4, 3, 1,
+  "Andina", "12-17a", 7, 5, 13, 12, 18, 14, 14,
+  "Andina", "18-29a", 51, 59, 66, 78, 96, 88, 68,
+  "Andina", "30-59a", 74, 56, 85, 158, 159, 174, 125,
+  "Andina", "60a >",  83, 62, 42, 97, 157, 128, 108
+)
+
+plot_data <- raw_data %>%
+  pivot_longer(cols = `2019`:`2025`, names_to = "Anio_Texto", values_to = "Casos") %>%
+  mutate(
+    # Mantenemos Año_Num para el eje X, pero no lo mostraremos en el tooltip
+    Año_Num = as.numeric(Anio_Texto),
+    Etapa = trimws(Etapa),
+    Etapa = factor(Etapa, levels = niveles_oficiales),
+    Etnia = case_when(
+      Etnia == "Afroperuana" ~ "Población afroperuana",
+      Etnia == "Amazónica" ~ "Poblaciones amazónicas",
+      Etnia == "Andina" ~ "Poblaciones andinas",
+      TRUE ~ Etnia
+    )
+  ) %>%
+  filter(!is.na(Etapa))
+
+# 4. GRÁFICO
+g_curso_vida <- ggplot(plot_data, aes(x = Año_Num, y = Casos, fill = Etapa)) +
+  geom_area(
+    position = "stack", 
+    alpha = 0.85, 
+    color = "white", 
+    size = 0.1,
+    # AQUI ESTÁ LA SOLUCIÓN AL ERROR DE NIVELES:
+    # Agregamos group = Etapa explícitamente para que ggplot no se confunda con el 'text'
+    aes(
+      group = Etapa, 
+      # Definimos exactamente qué queremos ver. NO incluimos Año_Num.
+      text = paste0("<b>", Etapa, "</b><br>",
+                    "Casos: ", Casos, "<br>") # Usamos el texto del año si quieres que aparezca el año limpio
+    )
+  ) +
+  
+  facet_wrap(~Etnia, ncol = 1, scales = "free_y") +
+  
+  scale_fill_manual(values = colores_etapa, name = "Curso de Vida") +
+  scale_x_continuous(breaks = 2019:2025) +
+  
+  labs(
+    title = "Tuberculosis en afroperuanos, andinos y amazónicos por curso de vida",
+    subtitle = "2019-2025",
+    x = "",
+    y = "Número de Casos"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    strip.text = element_text(face = "bold", size = 12),
+    strip.background = element_rect(fill = "#f0f0f0", color = NA),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    axis.title.y = element_text(margin = margin(r = 15), face = "bold")
+  )
+
+# 5. INTERACTIVIDAD
+# tooltip = "text" es la clave: le dice a Plotly que SOLO muestre lo que pusimos en aes(text=...)
+# e ignore las variables automáticas como Año_Num.
+ggplotly(g_curso_vida, tooltip = "text") %>%
+  layout(
+    hovermode = "x unified",
+    legend = list(
+      orientation = "h",
+      xanchor = "center",
+      x = 0.5,
+      y = -0.05,
+      title = list(text = "Curso de vida")
+    ),
+    margin = list(t = 80, b = 80, l = 80)
+  )
+```
+
+## Datos Fuente
+
+```{r}
+make_download_table(raw_data, "raw_vida")
+```
+:::
+
+## **Tuberculosis en pueblos amazónicos por departamento 2019-2025**
+
+::: panel-tabset
+## Gráfico
+
+Loreto, Ucayali, Amazonas y Junín tienen los mayores registros del 2019 al 2023.
+
+```{r}
+#| warning: false
+library(tidyverse)
+library(plotly)
+
+# 1. DATOS
+data_tb_mapa <- tribble(
+  ~Departamento, ~`2019`, ~`2020`, ~`2021`, ~`2022`, ~`2023`, ~`2024`, ~`2025`,
+  "AMAZONAS", 73, 35, 109, 153, 464, 60, 36,
+  "ANCASH", 0, 0, 4, 0, 0, 1, 2,
+  "APURIMAC", 2, 0, 0, 0, 0, 4, 0,
+  "AREQUIPA", 0, 0, 1, 3, 2, 1, 0,
+  "AYACUCHO", 0, 0, 18, 1, 4, 13, 5,
+  "CAJAMARCA", 0, 0, 8, 3, 0, 2, 1,
+  "CALLAO", 1, 0, 3, 1, 1, 0, 1,
+  "CUSCO", 20, 15, 17, 52, 9, 20, 23,
+  "HUANCAVELICA", 1, 0, 0, 0, 0, 0, 0,
+  "HUANUCO", 0, 5, 13, 7, 12, 9, 2,
+  "ICA", 2, 0, 0, 0, 2, 7, 0,
+  "JUNIN", 41, 42, 47, 57, 59, 49, 24,
+  "LA LIBERTAD", 0, 0, 2, 1, 2, 0, 6,
+  "LAMBAYEQUE", 2, 1, 7, 6, 4, 4, 3,
+  "LIMA", 15, 10, 9, 11, 40, 21, 30,
+  "LORETO", 190, 141, 110, 242, 205, 293, 294,
+  "MADRE DE DIOS", 14, 9, 19, 20, 10, 5, 2,
+  "PASCO", 38, 11, 17, 14, 13, 10, 28,
+  "PIURA", 1, 0, 1, 0, 2, 0, 0,
+  "PUNO", 0, 1, 0, 1, 0, 0, 0,
+  "SAN MARTIN", 0, 1, 12, 15, 30, 43, 11,
+  "TACNA", 2, 0, 0, 0, 0, 0, 0,
+  "TUMBES", 8, 0, 13, 7, 8, 3, 1,
+  "UCAYALI", 135, 168, 98, 313, 1067, 643, 133
+)
+
+# 2. PROCESAMIENTO (Con corrección de ranking)
+plot_data <- data_tb_mapa %>%
+  pivot_longer(cols = `2019`:`2025`, names_to = "Año_Texto", values_to = "Casos") %>%
+  mutate(`Año` = as.numeric(Año_Texto)) %>%
+  complete(Departamento, `Año`, fill = list(Casos = 0)) %>% 
+  
+  # Ordenar alfabéticamente (Invertido para que 'Amazonas' salga arriba en el gráfico)
+  mutate(
+    Departamento = fct_rev(factor(Departamento)),
+    Tooltip_Text = paste0("<b>", Departamento, "</b><br>",
+                          "Casos: ", Casos)
+  ) %>%
+  
+  # Ordenar el dataframe para que la animación sea secuencial
+  arrange(`Año`, Departamento)
+
+# 3. COLORES
+colores_region <- c(
+  "UCAYALI" = "#730000", "LORETO" = "#c11f1f", "AMAZONAS" = "#ff8800",
+  "JUNIN" = "#ffc502", "PASCO" = "#88e99a", "CUSCO" = "#1aa7ee",
+  "LIMA" = "#9b96e4", "SAN MARTIN" = "#dc9bee", "MADRE DE DIOS" = "#007d8e",
+  "HUANUCO" = "#29dae4"
+)
+
+# 3. GRÁFICO (Todas las regiones, posición fija)
+g_animado <- ggplot(plot_data, aes(x = Casos, y = Departamento)) +
+  
+  # Barras
+  # Usamos una escala de colores viridis porque son muchas categorías (24)
+  geom_col(aes(fill = Departamento, frame = `Año`, text = Tooltip_Text), 
+           width = 0.7, position= "identity") +
+  
+  # Usamos viridis (turbo o plasma) para diferenciar 24 colores
+  scale_fill_viridis_d(option = "turbo", guide = "none") + 
+  
+  # Expansión del eje X para que quepan los números grandes (como el 1067 de Ucayali)
+  scale_x_continuous(expand = expansion(mult = c(0, 0.2))) +
+  
+  labs(
+    title = "Evolución de Tuberculosis en Pueblos Amazónicos (Por Departamento)",
+    x = "Número de Casos",
+    y = ""
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    panel.grid.major.y = element_blank(), # Limpieza visual
+    axis.text.y = element_text(size = 9), 
+    legend.position = "none"# Texto del eje Y legible
+  )
+
+# 4. INTERACTIVIDAD
+# Aumentamos el 'height' a 900px porque 24 barras necesitan espacio vertical
+ggplotly(g_animado, tooltip = "text", height = 900) %>%
+  layout(
+    showlegend = FALSE,
+    margin = list(l = 120, r = 50), # Margen izquierdo para nombres largos como "Madre de Dios"
+    animation = list(
+      frame = list(duration = 1000, redraw = TRUE),
+      transition = list(duration = 500, easing = "linear")
+    )
+  )
+```
+
+## Datos Fuente
+
+```{r}
+make_download_table(data_tb_mapa, "data_tb_amazonicos")
+```
+:::
+
+## **Tuberculosis en afroperuanos por departamento 2019-2025**
+
+::: panel-tabset
+## Gráfico
+
+Piura, en el caso de la población afroperuana,  es el departamento que destaca con mayores registros de casos de tuberculosis.
+
+```{r}
+#| warning: false
+library(tidyverse)
+library(plotly)
+library(viridis)
+
+# 1. DATOS
+data_tb_afro <- tribble(
+  ~Departamento, ~`2019`, ~`2020`, ~`2021`, ~`2022`, ~`2023`, ~`2024`, ~`2025`,
+  "AREQUIPA", 1, 0, 0, 0, 0, 0, 0,
+  "AYACUCHO", 3, 0, 0, 0, 0, 0, 0,
+  "HUANUCO", 0, 2, 0, 2, 0, 0, 0,
+  "ICA", 0, 2, 0, 2, 1, 0, 1,
+  "LAMBAYEQUE", 0, 0, 0, 1, 1, 0, 2,
+  "LIMA", 4, 1, 0, 2, 2, 1, 1,
+  "LORETO", 0, 2, 0, 1, 0, 0, 0,
+  "PIURA", 10, 17, 32, 6, 0, 4, 0,
+  "PUNO", 0, 2, 0, 0, 0, 0, 0,
+  "TUMBES", 0, 0, 0, 0, 1, 0, 0
+)
+
+# 2. PROCESAMIENTO (Con corrección de ranking)
+plot_data <- data_tb_afro %>%
+  pivot_longer(cols = `2019`:`2025`, names_to = "Año_Texto", values_to = "Casos") %>%
+  mutate(`Año` = as.numeric(Año_Texto)) %>%
+  complete(Departamento, `Año`, fill = list(Casos = 0)) %>% 
+  
+  # Ordenar alfabéticamente (Invertido para que 'Amazonas' salga arriba en el gráfico)
+  mutate(
+    Departamento = fct_rev(factor(Departamento)),
+    Tooltip_Text = paste0("<b>", Departamento, "</b><br>",
+                          "Casos: ", Casos)
+  ) %>%
+  
+  # Ordenar el dataframe para que la animación sea secuencial
+  arrange(`Año`, Departamento)
+
+# 3. COLORES
+colores_region <- c(
+  "UCAYALI" = "#730000", "LORETO" = "#c11f1f", "AMAZONAS" = "#ff8800",
+  "JUNIN" = "#ffc502", "PASCO" = "#88e99a", "CUSCO" = "#1aa7ee",
+  "LIMA" = "#9b96e4", "SAN MARTIN" = "#dc9bee", "MADRE DE DIOS" = "#007d8e",
+  "HUANUCO" = "#29dae4"
+)
+
+# 3. GRÁFICO (Todas las regiones, posición fija)
+g_animado <- ggplot(plot_data, aes(x = Casos, y = Departamento)) +
+  
+  # Barras
+  # Usamos una escala de colores viridis porque son muchas categorías (24)
+  geom_col(aes(fill = Departamento, frame = `Año`, text = Tooltip_Text), 
+           width = 0.7, position= "identity") +
+  
+  # Usamos viridis (turbo o plasma) para diferenciar 24 colores
+  scale_fill_viridis_d(option = "turbo", guide = "none") + 
+  
+  # Expansión del eje X para que quepan los números grandes (como el 1067 de Ucayali)
+  scale_x_continuous(expand = expansion(mult = c(0, 0.2))) +
+  
+  labs(
+    title = "Evolución de Tuberculosis en Población Afrodescendiente (Por Departamento)",
+    x = "Número de Casos",
+    y = ""
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    panel.grid.major.y = element_blank(), # Limpieza visual
+    axis.text.y = element_text(size = 9), 
+    legend.position = "none"# Texto del eje Y legible
+  )
+
+# 4. INTERACTIVIDAD
+# Aumentamos el 'height' a 900px porque 24 barras necesitan espacio vertical
+ggplotly(g_animado, tooltip = "text", height = 900) %>%
+  layout(
+    showlegend = FALSE,
+    margin = list(l = 120, r = 50), # Margen izquierdo para nombres largos como "Madre de Dios"
+    animation = list(
+      frame = list(duration = 1000, redraw = TRUE),
+      transition = list(duration = 500, easing = "linear")
+    )
+  )
+```
+
+
+## Datos Fuente
+```{r}
+make_download_table(data_tb_afro, "data_tb_afroperuanos")
+```
+:::
+
+## **Tuberculosis en poblaciones andinas por departamento 2019-2025**
+
+::: panel-tabset
+## Gráfico
+
+Desde el 2019 al 2022, Ayacucho y Puno son las regiones con mayores registros en las poblaciones andinas. El 2023 son Ayacucho y Cusco, este último departamento triplicó en el número de sus registros.
+
+```{r}
+
+#| warning: false
+library(tidyverse)
+library(plotly)
+library(viridis)
+
+# 1. DATOS (Extraídos del Flourish de TB Población Andina)
+data_tb_andina <- tribble(
+  ~Departamento, ~`2019`, ~`2020`, ~`2021`, ~`2022`, ~`2023`, ~`2024`, ~`2025`,
+  "AMAZONAS", 1, 0, 0, 0, 1, 0, 1,
+  "ANCASH", 5, 10, 11, 19, 20, 41, 49,
+  "APURIMAC", 0, 0, 0, 0, 6, 6, 6,
+  "AREQUIPA", 1, 0, 0, 4, 3, 8, 3,
+  "AYACUCHO", 102, 109, 93, 121, 90, 72, 27,
+  "CAJAMARCA", 0, 0, 0, 0, 2, 2, 1,
+  "CALLAO", 1, 0, 1, 2, 4, 3, 1,
+  "CUSCO", 24, 8, 5, 28, 101, 80, 59,
+  "HUANCAVELICA", 2, 5, 11, 6, 23, 78, 46,
+  "HUANUCO", 10, 8, 0, 4, 2, 0, 2,
+  "ICA", 1, 5, 4, 6, 5, 2, 3,
+  "JUNIN", 0, 1, 1, 0, 2, 5, 1,
+  "LA LIBERTAD", 0, 1, 0, 0, 1, 0, 0,
+  "LAMBAYEQUE", 0, 0, 1, 0, 1, 4, 9,
+  "LIMA", 35, 10, 36, 89, 98, 77, 63,
+  "LORETO", 3, 1, 2, 4, 1, 2, 1,
+  "MADRE DE DIOS", 0, 1, 1, 1, 4, 9, 1,
+  "MOQUEGUA", 0, 0, 1, 0, 0, 1, 0,
+  "PASCO", 0, 0, 0, 0, 7, 0, 0,
+  "PIURA", 2, 0, 0, 0, 0, 0, 0,
+  "PUNO", 36, 26, 50, 67, 43, 19, 32,
+  "SAN MARTIN", 0, 1, 0, 0, 10, 4, 0,
+  "TACNA", 4, 0, 1, 3, 7, 5, 5,
+  "TUMBES", 0, 1, 4, 0, 4, 0, 0,
+  "UCAYALI", 0, 1, 0, 1, 5, 7, 8
+)
+# 2. PROCESAMIENTO (Con corrección de ranking)
+plot_data <- data_tb_andina %>%
+  pivot_longer(cols = `2019`:`2025`, names_to = "Año_Texto", values_to = "Casos") %>%
+  mutate(`Año` = as.numeric(Año_Texto)) %>%
+  complete(Departamento, `Año`, fill = list(Casos = 0)) %>% 
+  
+  # Ordenar alfabéticamente (Invertido para que 'Amazonas' salga arriba en el gráfico)
+  mutate(
+    Departamento = fct_rev(factor(Departamento)),
+    Tooltip_Text = paste0("<b>", Departamento, "</b><br>",
+                          "Casos: ", Casos)
+  ) %>%
+  
+  # Ordenar el dataframe para que la animación sea secuencial
+  arrange(`Año`, Departamento)
+
+# 3. COLORES
+colores_region <- c(
+  "UCAYALI" = "#730000", "LORETO" = "#c11f1f", "AMAZONAS" = "#ff8800",
+  "JUNIN" = "#ffc502", "PASCO" = "#88e99a", "CUSCO" = "#1aa7ee",
+  "LIMA" = "#9b96e4", "SAN MARTIN" = "#dc9bee", "MADRE DE DIOS" = "#007d8e",
+  "HUANUCO" = "#29dae4"
+)
+
+# 3. GRÁFICO (Todas las regiones, posición fija)
+g_animado <- ggplot(plot_data, aes(x = Casos, y = Departamento)) +
+  
+  # Barras
+  # Usamos una escala de colores viridis porque son muchas categorías (24)
+  geom_col(aes(fill = Departamento, frame = `Año`, text = Tooltip_Text), 
+           width = 0.7, position= "identity") +
+  
+  # Usamos viridis (turbo o plasma) para diferenciar 24 colores
+  scale_fill_viridis_d(option = "turbo", guide = "none") + 
+  
+  # Expansión del eje X para que quepan los números grandes (como el 1067 de Ucayali)
+  scale_x_continuous(expand = expansion(mult = c(0, 0.2))) +
+  
+  labs(
+    title = "Evolución de Tuberculosis en Poblaciones Andinas (Por Departamento)",
+    x = "Número de Casos",
+    y = ""
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    panel.grid.major.y = element_blank(), # Limpieza visual
+    axis.text.y = element_text(size = 9), 
+    legend.position = "none"# Texto del eje Y legible
+  )
+
+# 4. INTERACTIVIDAD
+# Aumentamos el 'height' a 900px porque 24 barras necesitan espacio vertical
+ggplotly(g_animado, tooltip = "text", height = 900) %>%
+  layout(
+    showlegend = FALSE,
+    margin = list(l = 120, r = 50), # Margen izquierdo para nombres largos como "Madre de Dios"
+    animation = list(
+      frame = list(duration = 1000, redraw = TRUE),
+      transition = list(duration = 500, easing = "linear")
+    )
+  )
+```
+
+## Datos Fuente
+```{r}
+make_download_table(data_tb_andina, "data_tb_andina")
+```
+:::
+

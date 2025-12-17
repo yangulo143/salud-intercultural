@@ -1,0 +1,28 @@
+project:
+  type: website
+  output-dir: docs
+  render:
+    - index.qmd
+    - hepatitis_b.qmd
+    - tuberculosis.qmd
+    - desnutricion.qmd
+
+website:
+  title: "Sala situacional Salud intercultural e Investigación Social (2019-2024)"
+  navbar:
+    left:
+      - href: index.qmd
+        text: "Inicio"
+      - href: hepatitis_b.qmd
+        text: "Hepatitis B"
+      - href: tuberculosis.qmd
+        text: "Tuberculosis"
+      - href: desnutricion.qmd
+        text: "Desnutricion"
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    code-fold: true
+    self-contained: true

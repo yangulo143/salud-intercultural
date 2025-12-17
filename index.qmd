@@ -1,0 +1,112 @@
+---
+title: "Rikuchiy Llacta"
+---
+
+Encontrará contenido sobre algunas enfermedades que afectan a los pueblos de la Amazonía y los Andes y la población afroperuana en el Perú, en qué proporción por sexo, cuáles son las edades más afectadas, en qué departamentos se dan los casos, y otros aspectos que influencian en la salud de las personas.
+
+### Reportes Disponibles
+
+::::: grid
+::: g-col-6
+### 📊 [Hepatitis B en poblaciones originarias amazónicas](hepatitis_b.html)
+
+**Fecha:** Marzo 2024 
+**Datos:** HISS MINSA.
+:::
+
+::: {.g-col-6}
+### 📊 [Tuberculosis, un desafío en las poblaciones indígenas y afroperuanas](tuberculosis.html)
+**Fecha:** Diciembre 2025 
+**Datos:** HISS MINSA. 
+
+:::
+
+::: {.g-col-6}
+### 🧪 [Desnutrición en poblaciones de la Amazonía, Andes y Afroperuana](desnutricion.html)
+**Fecha:** Mayo 2022
+**Datos:** HISS MINSA 
+:::
+
+::: {.g-col-6}
+### 🩺 [VIH](VIH.html)
+**Fecha:** Diciembre 2025
+**Datos:** HISS MINSA 
+:::
+
+::: {.g-col-6}
+### 💫 [Anemia nutricional](anemia.html)
+**Fecha:** Diciembre 2025
+**Datos:** HISS MINSA
+
+:::
+
+::: {.g-col-6}
+### 🍎 [Hipertensión Arterial](hipertension.html)
+**Fecha:** Diciembre 2025
+**Datos:** HISS MINSA 
+:::
+
+::: {.g-col-6}
+### 🩺 [Dengue](dengue.html)
+**Fecha:** Diciembre 2025
+**Datos:** HISS MINSA
+:::
+
+::: {.g-col-6}
+### 🌱 [VIH en población yanesha](VIH_yanesha.html)
+**Fecha:** Mayo 2023
+**Datos:** HISS MINSA 
+
+:::
+
+::: {.g-col-6}
+### 🌱 [Fallecidos por etnicidad](Produccion_cientifica_coca.html)
+**Fecha:** Diciembre 2025
+**Datos:** Scopus 
+Un análisis completo de la producción científica global sobre la especie vegetal Erythroxylum coca (coca), incluyendo tendencias temporales, mapas de colaboración y nubes de palabras clave.
+:::
+
+::: {.g-col-6}
+### 🌱 [Cambio Climático](Produccion_cientifica_san pedro.html)
+**Fecha:** Diciembre 2025
+**Datos:** Scopus 
+Un análisis completo de la producción científica global sobre la especie vegetal Trichocereus macrogonus var. pachanoi (San Pedro), incluyendo tendencias temporales, mapas de colaboración y nubes de palabras clave.
+:::
+
+::: {.g-col-6}
+### 🌱 [Atendidos por pertinencia étnica](Produccion_cientifica_ayahuasca.html)
+**Fecha:** Diciembre 2025
+**Datos:** Scopus 
+Un análisis completo de la producción científica global sobre el brebaje de Banisteriopsis caapi y Psychotria viridis (Ayahuasca), incluyendo tendencias temporales, mapas de colaboración y nubes de palabras clave.
+:::
+
+::: {.g-col-6}
+### 🌱 [Atenciones por etnicidad](Produccion_cientifica_sacha_inchi.html)
+**Fecha:** Diciembre 2025
+**Datos:** Scopus 
+Un análisis completo de la producción científica global sobre la especie vegetal Plukenetia volubilis (Sacha Inchi), incluyendo tendencias temporales, mapas de colaboración y nubes de palabras clave. 
+
+:::
+
+::: {.g-col-6}
+### 🌱 [Enfermedades en poblaciones indigenas y afro](Produccion_cientifica_maca.html)
+**Fecha:** Diciembre 2025
+**Datos:** Scopus 
+Un análisis completo de la producción científica global sobre la especie vegetal Lepidium meyenii (Maca), incluyendo tendencias temporales, mapas de colaboración y nubes de palabras clave. 
+:::
+
+::: {.g-col-6}
+### 🌱 [Obesidad](Produccion_cientifica_una_de_gato.html)
+**Fecha:** Diciembre 2025
+**Datos:** Scopus 
+Un análisis completo de la producción científica global sobre la especie vegetal Uncaria tomentosa (Uña de gato), incluyendo tendencias temporales, mapas de colaboración y nubes de palabras clave. 
+:::
+
+::: {.g-col-6}
+### 🌱 [Mortalidad materna por etnicidad](Produccion_cientifica_una_de_gato.html)
+**Fecha:** Diciembre 2025
+**Datos:** Scopus 
+Un análisis completo de la producción científica global sobre la especie vegetal Uncaria tomentosa (Uña de gato), incluyendo tendencias temporales, mapas de colaboración y nubes de palabras clave. 
+:::
+
+:::::

@@ -1,0 +1,568 @@
+---
+title: "Hepatitis B en poblaciones originarias amazónicas"
+subtitle: "Análisis de datos del Ministerio de Salud (MINSA)"
+date: last-modified
+author: "Subdirección de Medicina Tradicional, Interculturalidad e Investigación Social (SUMEC-CENSI)"
+format: 
+  html:
+    theme: cosmo
+    toc: true
+    page-layout: full
+    code-fold: true
+footer: "Fuente de datos: Sistema HISS-MINSA | Fecha de corte: 03/2024"
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(reactable) # Para tablas bonitas
+library(plotly)  
+library(DT)# Para gráficos interactivos
+
+# 1. RECONSTRUCCIÓN MANUAL DE LA DATA (Basado en tu código fuente Flourish)
+# He limpiado el JSON y lo he convertido en un tibble directo para ti.
+# Nota: He convertido los "null" a 0 para poder sumar, y unificado los años numéricos.
+
+data_raw <- tribble(
+  ~Departamento, ~Red_Salud, ~Etnia, ~`2019`, ~`2020`, ~`2021`, ~`2022`, ~`2023`,
+  "Amazonas", "Bagua", "Awajún", 1, 1, 1, 1, 1,
+  "Amazonas", "Condorcanqui", "Awajún", 0, 1, 0, 2, 4,
+  "Amazonas", "Condorcanqui", "Wampis", 0, 2, 1, 0, 2,
+  "Amazonas", "No pertenece a Red", "Wampis", 0, 0, 0, 0, 1,
+  "Ayacucho", "Huamanga", "Bora", 0, 0, 0, 0, 1,
+  "Ayacucho", "No pertenece a Red", "Bora", 0, 0, 0, 0, 1,
+  "Ayacucho", "No pertenece a Red", "Shiwilu", 0, 0, 0, 0, 2,
+  "Ayacucho", "No pertenece a Red", "Tikuna", 0, 0, 0, 0, 3,
+  "Cusco", "La Convencion", "Matsigenka", 0, 0, 0, 0, 1,
+  "Cusco", "La Convencion", "Yine", 0, 0, 1, 0, 0,
+  "Cusco", "No pertenece a Red", "Ashaninka", 0, 0, 0, 1, 0,
+  "Cusco", "Cusco Sur", "Matsigenka", 0, 0, 1, 0, 0,
+  "Junin", "Chanchamayo", "Ashaninka", 0, 1, 0, 0, 0,
+  "Junin", "Pichanaki", "Ashaninka", 0, 1, 0, 0, 0,
+  "Junin", "Satipo", "Ashaninka", 1, 2, 1, 0, 1,
+  "Lima Diris Centro", "No pertenece a Red", "Ashaninka", 1, 0, 0, 0, 0,
+  "Loreto", "Alto Amazonas", "Kukama Kukamiria", 0, 0, 0, 1, 0,
+  "Loreto", "Alto Amazonas", "Shawi", 0, 0, 0, 2, 3,
+  "Loreto", "Datem Del Marañon", "Achuar", 1, 0, 1, 5, 1,
+  "Loreto", "Datem Del Marañon", "Awajún", 0, 0, 0, 0, 2,
+  "Loreto", "Datem Del Marañon", "Chapra", 0, 2, 0, 0, 0,
+  "Loreto", "Datem Del Marañon", "Kandozi", 0, 1, 0, 1, 2,
+  "Loreto", "Datem Del Marañon", "Kichwa", 1, 0, 0, 0, 0,
+  "Loreto", "Datem Del Marañon", "Wampis", 1, 0, 0, 0, 0,
+  "Loreto", "Datem Del Marañon", "Shawi", 0, 0, 1, 2, 1,
+  "Loreto", "Loreto", "Kichwa", 0, 0, 0, 1, 1,
+  "Loreto", "Loreto", "Achuar", 0, 0, 2, 0, 0,
+  "Loreto", "Maynas Ciudad", "Kukama Kukamiria", 0, 0, 0, 0, 1,
+  "Loreto", "Maynas Periferie", "Kichwa", 2, 0, 0, 3, 2,
+  "Loreto", "Maynas Periferie", "Matsés", 1, 0, 0, 0, 0,
+  "Loreto", "Maynas Periferie", "Yanesha", 0, 0, 0, 1, 1,
+  "Loreto", "No pertenece a Red", "Achuar", 1, 0, 0, 0, 0,
+  "Loreto", "No pertenece a Red", "Awajún", 0, 1, 0, 0, 0,
+  "Loreto", "No pertenece a Red", "Kandozi", 0, 0, 0, 0, 1,
+  "Loreto", "No pertenece a Red", "Kichwa", 1, 1, 0, 0, 1,
+  "Loreto", "No pertenece a Red", "Kukama Kukamiria", 1, 0, 0, 0, 2,
+  "Loreto", "No pertenece a Red", "Ocaina", 1, 0, 0, 0, 0,
+  "Loreto", "No pertenece a Red", "Shawi", 0, 0, 0, 1, 3,
+  "Loreto", "No pertenece a Red", "Yanesha", 1, 0, 0, 0, 0,
+  "Loreto", "Ramon Castilla", "Tikuna", 0, 0, 0, 0, 1, # Corregido el vacío
+  "Madre De Dios", "Madre De Dios", "Ashaninka", 0, 0, 0, 0, 1,
+  "Madre De Dios", "Madre De Dios", "Harakbut", 0, 0, 0, 1, 0,
+  "Madre De Dios", "Madre De Dios", "Yine", 1, 0, 0, 0, 0,
+  "Madre De Dios", "No pertenece a Red", "Ese Eja", 0, 0, 0, 2, 0,
+  "Madre De Dios", "No pertenece a Red", "Matsigenka", 0, 0, 2, 1, 0,
+  "Pasco", "Oxapampa", "Yanesha", 0, 0, 0, 1, 0,
+  "Pasco", "Oxapampa", "Ashaninka", 0, 0, 2, 0, 0,
+  "San Martin", "No pertenece a Red", "Kichwa", 0, 0, 1, 0, 0,
+  "Ucayali", "Atalaya", "Yine", 1, 0, 0, 0, 0,
+  "Ucayali", "Coronel Portillo", "Sharanahua", 0, 0, 0, 1, 0,
+  "Ucayali", "Coronel Portillo", "Shipibo-Konibo", 0, 1, 0, 0, 0,
+  "Ucayali", "Aguaytia", "Kakataibo", 0, 0, 1, 0, 0
+)
+
+# 2. TRANSFORMACIÓN (Tidy Data)
+# Convertimos de formato ancho (años como columnas) a formato largo
+hepatitis_clean <- data_raw %>%
+  pivot_longer(
+    cols = `2019`:`2023`,
+    names_to = "Anio",
+    values_to = "Casos"
+  ) %>%
+  mutate(Anio = as.integer(Anio))
+
+# Vista previa para verificar
+print(head(hepatitis_clean))
+
+# --- FUNCIÓN AUXILIAR PARA TABLAS DE DESCARGA ---
+# Esta función crea estandariza el botón de Excel para todos los gráficos
+make_download_table <- function(data_input, filename_label = "datos") {
+  datatable(
+    data_input,
+    extensions = 'Buttons',
+    rownames = FALSE,
+    options = list(
+      dom = 'Bfrtip',
+      buttons = list(
+        list(extend = 'excel', filename = filename_label, title = filename_label),
+        list(extend = 'csv', filename = filename_label)
+      ),
+      pageLength = 5, # Pocas filas para no ocupar mucho espacio
+      scrollX = TRUE,
+      language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')
+    )
+  )
+}
+
+
+```
+
+## **Hepatitis B en poblaciones indígenas de la Amazonía por departamento y redes de salud 2019-2023**
+
+En todo el periodo analizado los mayores registros de casos son procedentes de Loreto. Durante el 2019, se presentó también en Amazonas, Junín, Madre de Dios y Ucayali. El 2020 y 2021, aún con las limitaciones en las atenciones por la pandemia de la Covid-19, se registraron algunos casos en algunos otros departamentos, referidos líneas arriba. El 2022, Loreto cuadriplico el registro de casos en relación al año anterior. Por redes de salud, se observa que la red de salud Datem del Marañon, presenta más registros de casos. En tanto que el 2023, en Loreto y Amazonas se observa que el número de registros se sigue elevando. Por redes de salud, Condorcanqui registró mayor número de casos.
+
+::: panel-tabset
+## Gráfico
+
+Desde el 2019 al 2023, se registraron más casos de los awajún (15), casi el 50% pertenecen al 2023. Es seguido por los kiwchas (14), shawi (13), ashaninkas (12) y achuar (11) casos. En los shawis más del 50% de los casos proceden del 2023. Del 2022 al 2023, se observa más incremento de casos aunque en menor número de Shiwilu, Tikuna, wampis, kandozi y kukama kukamiria.
+
+\[\^1\]
+
+```{r}
+# --- GRÁFICO 1: Casos por Etnia (Ranking) ---
+plot_etnia <- hepatitis_clean %>%
+  group_by(Etnia) %>%
+  summarise(Total_Casos = sum(Casos)) %>%
+  filter(Total_Casos > 0) %>%
+  arrange(Total_Casos) %>%
+  mutate(Etnia = factor(Etnia, levels = Etnia)) %>% # Ordenar factor
+  ggplot(aes(x = Total_Casos, y = Etnia, 
+             text = paste("Etnia:", Etnia, "<br>Casos:", Total_Casos))) +
+  geom_col(fill = "#4a92bf") + # Color azul similar al original
+  labs(title = "Total de Casos de Hepatitis B por Pueblo Indígena (2019-2023)",
+       x = "Número de Casos", y = "") +
+  theme_minimal()
+
+ggplotly(plot_etnia, tooltip = "text")
+
+
+```
+
+## Mapa Coroplético
+
+```{r}
+library(tidyverse)
+library(sf)
+library(leaflet)
+library(stringi)
+library(htmltools)
+# 1. Descargar el mapa manualmente desde un repositorio alternativo estable
+# Usamos el repositorio de J. Castagnetto (muy confiable en la comunidad R-Perú)
+
+# Leemos el archivo descargado
+peru_map <- read_sf("peru_departamental_simple.geojson")
+
+# 2. Preparar Data del Mapa (Hepatitis)
+# Normalizamos nombres en TU data (hepatitis_clean)
+data_mapa_prep <- hepatitis_clean %>%
+  mutate(
+    # Quitamos tildes, mayúsculas y caracteres especiales
+    Departamento_Norm = toupper(stri_trans_general(Departamento, "Latin-ASCII")),
+    # Caso especial: Unificar LIMA (En data puede venir como Lima región/metropolitana/diris)
+    Departamento_Norm = case_when(
+      str_detect(Departamento_Norm, "LIMA") ~ "LIMA",
+      TRUE ~ Departamento_Norm
+    )
+  )
+
+# Generamos el texto del Tooltip
+data_tooltips <- data_mapa_prep %>%
+  group_by(Departamento_Norm, Etnia) %>%
+  summarise(Casos = sum(Casos), .groups = "drop") %>%
+  filter(Casos > 0) %>%
+  arrange(Departamento_Norm, desc(Casos)) %>%
+  group_by(Departamento_Norm) %>%
+  summarise(
+    Detalle_Etnias = paste(paste0("<b>", Etnia, ":</b> ", Casos), collapse = "<br>"),
+    Total_Dpto = sum(Casos)
+  )
+
+# 3. Cruzar con el Mapa Espacial
+# En este GeoJSON, la columna del nombre suele ser "NOMBDEP"
+mapa_final <- peru_map %>%
+  rename(Nombre_Dpto = NOMBDEP) %>% # Renombramos para facilitar
+  mutate(
+    name_norm = toupper(stri_trans_general(Nombre_Dpto, "Latin-ASCII")),
+    # Corrección para LIMA
+    name_norm = case_when(
+      str_detect(name_norm, "LIMA") ~ "LIMA",
+      TRUE ~ name_norm
+    )
+  ) %>%
+  # Agrupamos por si Lima viene dividida
+  group_by(name_norm) %>%
+  summarise(
+    geometry = st_union(geometry),
+    Nombre_Mostrar = first(Nombre_Dpto) 
+  ) %>%
+  # Unimos con los datos de hepatitis
+  left_join(data_tooltips, by = c("name_norm" = "Departamento_Norm")) %>%
+  mutate(Total_Dpto = replace_na(Total_Dpto, 0))
+
+# --- VISUALIZACIÓN ---
+pal <- colorBin("YlOrRd", domain = mapa_final$Total_Dpto, bins = 5)
+
+leaflet(mapa_final) %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addPolygons(
+    fillColor = ~pal(Total_Dpto),
+    weight = 1, opacity = 1, color = "white", dashArray = "3", fillOpacity = 0.7,
+    highlightOptions = highlightOptions(
+      weight = 3, color = "#666", dashArray = "", fillOpacity = 0.7, bringToFront = TRUE
+    ),
+    label = ~lapply(paste0(
+      "<div style='font-family: sans-serif;'>",
+      "  <h4 style='margin:0;'>", Nombre_Mostrar, "</h4>",
+      "  <span style='font-size:12px; color:#555;'>Total: <b>", Total_Dpto, "</b> reportes</span>",
+      "  <hr style='margin:5px 0;'>",
+      "  <div style='font-size:11px;'>",
+           ifelse(is.na(Detalle_Etnias), "Sin registros", Detalle_Etnias),
+      "  </div>",
+      "</div>"
+    ), htmltools::HTML),
+    
+    labelOptions = labelOptions(
+      style = list("font-weight" = "normal", padding = "8px 12px"),
+      textsize = "13px",
+      direction = "auto",
+      maxWidth = "300px" # Ancho máximo para que no ocupe toda la pantalla si la lista es larga
+    )
+  ) %>%
+  addLegend(pal = pal, values = ~Total_Dpto, opacity = 0.7, title = "Casos Hep B", position = "bottomright")
+```
+
+## Evolución por años
+
+```{r}
+library(tidyverse)
+library(plotly)
+library(RColorBrewer)
+
+# --- PASO 1: Agregación y Limpieza de Datos ---
+# Aquí es donde eliminamos las "líneas divisoras" sumando todo por Etnia/Año
+data_agrupada <- hepatitis_clean %>%
+  group_by(Etnia, Anio) %>% 
+  summarise(Casos = sum(Casos, na.rm = TRUE), .groups = "drop") %>% # Suma colapsando departamentos
+  complete(Etnia, Anio, fill = list(Casos = 0)) %>% # Rellena huecos con 0
+  group_by(Etnia) %>%
+  arrange(Anio) %>%
+  mutate(
+    Casos_Acumulados = cumsum(Casos) # Calcula el acumulado
+  ) %>%
+  ungroup()
+
+# --- PASO 2: Asignación de Colores Fijos ---
+etnias_unicas <- unique(data_agrupada$Etnia)
+n_etnias <- length(etnias_unicas)
+
+# Creamos la paleta extendida
+paleta_base <- c(brewer.pal(12, "Paired"), brewer.pal(8, "Set2"))
+colores_hex <- colorRampPalette(paleta_base)(n_etnias)
+
+mapa_colores <- data.frame(
+  Etnia = etnias_unicas,
+  Color_Hex = colores_hex,
+  stringsAsFactors = FALSE
+)
+
+# Unimos los colores a la data
+data_final_animacion <- left_join(data_agrupada, mapa_colores, by = "Etnia")
+
+# Calculamos el valor máximo para dar espacio a los números fuera de la barra
+max_x <- max(data_final_animacion$Casos_Acumulados) * 1.3 
+
+# --- PASO 3: Gráfico sin líneas y con números externos ---
+fig <- plot_ly(
+  data_final_animacion,
+  y = ~reorder(Etnia, Casos_Acumulados), 
+  x = ~Casos_Acumulados,
+  frame = ~Anio, 
+  type = 'bar',
+  orientation = 'h',
+  
+  # CONFIGURACIÓN DEL TEXTO (NÚMEROS)
+  text = ~Casos_Acumulados,
+  textposition = 'outside', # Saca el número de la barra
+  textfont = list(color = 'black', size = 12), # Texto negro para legibilidad
+  cliponaxis = FALSE,       # Permite que el texto se dibuje aunque se salga un poco del área
+  
+  hoverinfo = "y+text",     # Tooltip limpio
+  
+  # CONFIGURACIÓN DE LA BARRA (SOLIDA)
+  marker = list(
+    color = ~Color_Hex,
+    line = list(width = 0) # Ancho 0 para asegurar que no haya bordes
+  ),
+  ids = ~Etnia 
+)
+
+fig <- fig %>% layout(
+  title = list(text = "", x = 0),
+  
+  # AJUSTE DEL EJE X
+  xaxis = list(
+    title = "Total de Casos Acumulados",
+    range = c(0, max_x), # Rango fijo + 30% extra para que quepan los números
+    showgrid = TRUE
+  ),
+  
+  yaxis = list(title = "", categoryorder = "total ascending"), 
+  showlegend = FALSE,
+  
+  # BOTÓN DE REPRODUCCIÓN
+  updatemenus = list(
+    list(
+      type = "buttons",
+      showactive = FALSE,
+      x = 0, y = 1.15,
+      buttons = list(
+        list(label = "▶ Reproducir",
+             method = "animate",
+             args = list(NULL, list(frame = list(duration = 1000, redraw = TRUE), 
+                                    fromcurrent = TRUE)))
+      )
+    )
+  )
+)
+
+fig
+```
+
+## Datos Fuente
+
+```{r}
+library(tidyverse)
+library(reactable)
+library(htmltools)
+
+# 1. PREPARACIÓN DE DATOS (Formato Tabla)
+# Convertimos la data "larga" a "ancha" (años como columnas)
+tabla_data <- hepatitis_clean %>%
+  pivot_wider(
+    names_from = Anio, 
+    values_from = Casos, 
+    values_fill = 0
+  ) %>%
+  # Calculamos el Total General por fila (suma horizontal)
+  mutate(Total = `2019` + `2020` + `2021` + `2022` + `2023`) %>%
+  # Reordenamos columnas para que Total vaya al final o al inicio según prefieras
+  select(Departamento, Red_Salud, Etnia, `2019`, `2020`, `2021`, `2022`, `2023`, Total)
+
+# 2. DEFINIR ESTILO DE BARRAS DE FONDO (Para imitar el estilo visual)
+# Función para poner barras de color dentro de las celdas (Data Bars)
+bar_style <- function(width = 1, fill = "#e6f3ff", height = "75%", align = "right") {
+  position <- paste0(width * 100, "%")
+  image <- sprintf("linear-gradient(90deg, %1$s %2$s, transparent %2$s)", fill, position)
+  list(
+    backgroundImage = image,
+    backgroundRepeat = "no-repeat",
+    backgroundPosition = paste(align, "center"),
+    backgroundSize = paste("100%", height)
+  )
+}
+
+# 3. CREAR LA TABLA INTERACTIVA
+reactable(
+  tabla_data,
+  groupBy = c("Departamento", "Red_Salud"), # ¡Esto crea los subtotales automáticamente!
+  pagination = TRUE,
+  filterable = TRUE,
+  searchable = TRUE,
+  striped = TRUE,
+  compact = TRUE,
+  defaultExpanded = FALSE, # Inicia colapsada para ver resumen por Dpto
+  
+  # Estilos generales
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#f7f7f8",
+      color = "#333",
+      fontWeight = "bold",
+      borderBottom = "2px solid #0622ac" # El color azul del borde original
+    ),
+    rowStyle = list(fontFamily = "Arial, sans-serif", fontSize = "14px"),
+    groupHeaderStyle = list(backgroundColor = "#e5eff5", fontWeight = "bold") # Color de totales
+  ),
+  
+  # Configuración de Columnas
+  columns = list(
+    Departamento = colDef(minWidth = 140),
+    Red_Salud = colDef(name = "Red de Salud", minWidth = 150),
+    Etnia = colDef(minWidth = 120),
+    
+    # Configuración masiva para las columnas numéricas
+    `2019` = colDef(aggregate = "sum", align = "center", style = function(value) {
+        bar_style(width = value / max(tabla_data$`2019`), fill = "#d6a4e9")
+      }),
+    `2020` = colDef(aggregate = "sum", align = "center", style = function(value) {
+        bar_style(width = value / max(tabla_data$`2020`), fill = "#d6a4e9")
+      }),
+    `2021` = colDef(aggregate = "sum", align = "center", style = function(value) {
+        bar_style(width = value / max(tabla_data$`2021`), fill = "#d6a4e9")
+      }),
+    `2022` = colDef(aggregate = "sum", align = "center", style = function(value) {
+        bar_style(width = value / max(tabla_data$`2022`), fill = "#d6a4e9")
+      }),
+    `2023` = colDef(aggregate = "sum", align = "center", style = function(value) {
+        bar_style(width = value / max(tabla_data$`2023`), fill = "#d6a4e9")
+      }),
+    
+    # Columna de Total Resaltada
+    Total = colDef(
+      aggregate = "sum", 
+      align = "center",
+      style = list(fontWeight = "bold", backgroundColor = "#f0f5f9"),
+      headerStyle = list(color = "#0622ac")
+    )
+  ),
+  
+  # Pie de tabla con resumen general
+  defaultColDef = colDef(
+    footer = function(values) {
+      if (!is.numeric(values)) return()
+      sum(values)
+    }
+  )
+)
+```
+:::
+
+## **Hepatitis B en poblaciones indígenas de la Amazonía por curso de vida 2019-2023**
+
+::: panel-tabset
+## Gráfico
+En el periodo analizado, por curso de vida, los más afectados son los adultos de 30 a 59 años (57 casos), seguido por los jóvenes (30 casos). Entre los pueblos con más casos en adultos de 30 a 59 años, son los shawi, kiwcha, achuar, Entre los jóvenes, los pueblos con más registros son los awajún, kukama kukamiria, ashaninka.
+
+
+```{r}
+library(tidyverse)
+library(plotly)
+
+# 1. RECONSTRUCCIÓN DE LA DATA (Extraída del código fuente Flourish)
+# Se han limpiado los valores vacíos "" y guiones "-" por 0
+data_curso_vida <- tribble(
+  ~Etapa, ~Etnia, ~`2019`, ~`2020`, ~`2021`, ~`2022`, ~`2023`,
+  "18-29a", "Achuar", 0, 0, 2, 2, 0,
+  "30-59a", "Achuar", 2, 0, 1, 3, 1,
+  "01-05a", "Ashaninka", 0, 0, 0, 1, 0,
+  "06-11a", "Ashaninka", 1, 0, 2, 0, 0,
+  "18-29a", "Ashaninka", 1, 2, 1, 0, 0,
+  "30-59a", "Ashaninka", 0, 2, 0, 0, 1,
+  "60a >", "Ashaninka", 0, 0, 0, 0, 1,
+  "12-17a", "Awajún", 0, 1, 0, 1, 1,
+  "18-29a", "Awajún", 0, 0, 1, 1, 4,
+  "30-59a", "Awajún", 1, 1, 0, 1, 2,
+  "60a >", "Awajún", 0, 1, 0, 0, 0,
+  "18-29a", "Bora", 0, 0, 0, 0, 1,
+  "30-59a", "Bora", 0, 0, 0, 0, 1,
+  "18-29a", "Chapra", 0, 1, 0, 0, 0,
+  "30-59a", "Chapra", 0, 1, 0, 0, 0,
+  "18-29a", "Ese Eja", 0, 0, 0, 2, 0,
+  "30-59a", "Harakbut", 0, 0, 0, 1, 0,
+  "12-17a", "Kandozi", 0, 0, 0, 1, 0,
+  "30-59a", "Kandozi", 0, 1, 0, 0, 3,
+  "01-05a", "Kakataibo", 0, 0, 1, 0, 0,
+  "01-05a", "Kichwa", 1, 0, 0, 0, 0,
+  "12-17a", "Kichwa", 0, 0, 1, 1, 0,
+  "18-29a", "Kichwa", 1, 0, 0, 1, 0,
+  "30-59a", "Kichwa", 2, 1, 0, 2, 3,
+  "60a >", "Kichwa", 0, 0, 0, 0, 1,
+  "18-29a", "Kukama Kukamiria", 1, 0, 0, 1, 3,
+  "30-59a", "Matsés", 1, 0, 0, 0, 0,
+  "30-59a", "Matsigenka", 0, 0, 1, 0, 1,
+  "60a >", "Matsigenka", 0, 0, 2, 1, 0,
+  "18-29a", "Ocaina", 1, 0, 0, 0, 0,
+  "30-59a", "Sharanahua", 0, 0, 0, 1, 0,
+  "12-17a", "Shawi", 0, 0, 1, 1, 0,
+  "18-29a", "Shawi", 0, 0, 0, 0, 1,
+  "30-59a", "Shawi", 0, 0, 0, 4, 5,
+  "60a >", "Shawi", 0, 0, 0, 0, 1,
+  "18-29a", "Shipibo-Konibo", 0, 1, 0, 0, 0,
+  "30-59a", "Shiwilu", 0, 0, 0, 0, 2,
+  "18-29a", "Tikuna", 0, 0, 0, 0, 3,
+  "30-59a", "Tikuna", 0, 0, 0, 0, 1,
+  "01-05a", "Wampis", 0, 0, 1, 0, 0,
+  "18-29a", "Wampis", 0, 0, 0, 0, 1,
+  "30-59a", "Wampis", 1, 1, 0, 0, 2,
+  "60a >", "Wampis", 0, 1, 0, 0, 0,
+  "18-29a", "Yanesha", 0, 0, 0, 1, 0,
+  "30-59a", "Yanesha", 1, 0, 0, 0, 1,
+  "60a >", "Yanesha", 0, 0, 0, 1, 0,
+  "18-29a", "Yine", 1, 0, 0, 0, 0,
+  "30-59a", "Yine", 1, 0, 0, 0, 0,
+  "60a >", "Yine", 0, 0, 1, 0, 0
+)
+
+# 2. PROCESAMIENTO
+# Ordenamos las etapas de vida cronológicamente, no alfabéticamente
+library(tidyverse)
+library(plotly)
+library(stringr) # Necesario para cortar los textos largos
+
+# 1. PROCESAMIENTO (Aseguramos el orden de factores)
+etapas_orden <- c("01-05a", "06-11a", "12-17a", "18-29a", "30-59a", "60a >")
+
+grafico_data <- data_curso_vida %>%
+  pivot_longer(cols = `2019`:`2023`, names_to = "Anio", values_to = "Casos") %>%
+  mutate(
+    Etapa = factor(Etapa, levels = etapas_orden),
+    Anio = factor(Anio, levels = c("2023", "2022", "2021", "2020", "2019")),
+    # TRUCO 1: Cortamos los nombres largos a 15 caracteres para que entren en 2 columnas
+    Etnia_Wrapped = str_wrap(Etnia, width = 15) 
+  ) %>%
+  filter(Casos > 0)
+
+# 2. CREACIÓN DEL GRÁFICO
+g <- ggplot(grafico_data, aes(x = Casos, y = Etnia_Wrapped, fill = Anio)) +
+  geom_col(position = position_stack(reverse = TRUE)) +
+  
+  # CAMBIO: Usamos facet_wrap con 2 columnas
+  # scales = "free_y" es vital para ocultar etnias sin casos en cada grupo
+  facet_wrap(~Etapa, scales = "free_y", ncol = 2) +
+  
+  scale_fill_viridis_d(option = "plasma", direction = -1, name = "Año") +
+  labs(
+    title = "",
+    x = "Número de Casos",
+    y = ""
+  ) +
+  theme_minimal() +
+  theme(
+    strip.text = element_text(face = "bold", size = 11),
+    strip.background = element_rect(fill = "#e5eff5", color = NA),
+    panel.spacing.x = unit(1.5, "cm"), # Espacio horizontal extra entre columnas
+    panel.spacing.y = unit(0.5, "cm"), # Espacio vertical
+    axis.text.y = element_text(size = 9) # Texto un poco más pequeño para que quepa
+  )
+
+# 3. INTERACTIVIDAD
+# Ajustamos height a 1000px para dar espacio vertical suficiente
+ggplotly(g, height = 1000, tooltip = c("y", "x", "fill")) %>%
+  layout(
+    # 1. Configuración de la leyenda ABAJO
+    legend = list(
+      orientation = "h",   # Horizontal
+      xanchor = "center",  # Anclada al centro
+      x = 0.5,             # Centrada horizontalmente
+      y = -0.05            # Un poco por debajo del gráfico (negativo)
+    ),
+    # 2. Ajuste de márgenes (Damos espacio abajo 'b' para la leyenda)
+    margin = list(l = 120, r = 20, t = 60, b = 100),
+    autosize = TRUE
+  )
+
+```
+## Datos Fuente
+
+```{r}
+make_download_table(data_curso_vida, "data_curso_vida")
+```
+
+:::

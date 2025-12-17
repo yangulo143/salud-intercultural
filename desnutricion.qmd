@@ -1,0 +1,590 @@
+---
+title: "Desnutrición en poblaciones de la Amazonía, Andes y Afroperuana"
+subtitle: "Análisis de datos del Ministerio de Salud (MINSA)"
+date: last-modified
+author: "Subdirección de Medicina Tradicional, Interculturalidad e Investigación Social (SUMEC-CENSI)"
+format: 
+  html:
+    theme: cosmo
+    toc: true
+    page-layout: full
+    code-fold: true
+execute:
+  warning: false
+  message: false
+footer: "Fuente de datos: Sistema HISS-MINSA | Fecha de corte: 05/2022"
+---
+
+La desnutrición se presenta cuando son insuficientes las calorías que se consumen o por la absorción deficiente de la cantidad de nutrientes esenciales (vitaminas y minerales) que permiten mantener la salud. Según la Organización Mundial de la salud, la desnutrición es una de las formas de malnutrición.
+
+La desnutrición, especialmente en los niños, los hace más vulnerables a más enfermedades y el riesgo de quedar con daños permanentes y hasta morir.
+
+Es necesario precisar que la diminución en el registro de los casos de esta problemática de salud se explica por la reducción en las atenciones en los servicios de salud a causa de la pandemia por la Covid-19.
+
+Según el CIE 10, sistema internacional que clasifica las morbilidades para un mejor análisis, la desnutrición comprende las siguientes categorías:
+
+- Kwashiorkor
+
+- Marasmo nutricional
+
+- Desnutrición proteicocalórica severa, no especificada
+
+- Desnutrición proteicocalórica de grado moderado y leve
+
+- Retardo del desarrollo debido a desnutrición proteicocalórica
+
+- Desnutrición proteicocalórica, no especificada
+
+## **Desnutrición en poblaciones andinas, amazónicas, afroperuanas y mestiza 2019-2021**
+
+
+::: panel-tabset
+## Gráfico
+
+
+```{r}
+#| warning: false
+library(tidyverse)
+library(plotly)
+library(DT)
+library(rio)
+
+# --- FUNCIÓN AUXILIAR PARA TABLAS DE DESCARGA ---
+# Esta función crea estandariza el botón de Excel para todos los gráficos
+make_download_table <- function(data_input, filename_label = "datos") {
+  datatable(
+    data_input,
+    extensions = 'Buttons',
+    rownames = FALSE,
+    options = list(
+      dom = 'Bfrtip',
+      buttons = list(
+        list(extend = 'excel', filename = filename_label, title = filename_label),
+        list(extend = 'csv', filename = filename_label)
+      ),
+      pageLength = 5, # Pocas filas para no ocupar mucho espacio
+      scrollX = TRUE,
+      language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')
+    )
+  )
+}
+
+data_nutricion<- read_csv("data-nutricional.csv")
+
+# 2. PROCESAMIENTO
+plot_data <- data_nutricion %>%
+  pivot_longer(
+    cols = `2019`:`2021`, 
+    names_to = "Año_Texto", 
+    values_to = "Casos"
+  ) %>%
+  mutate(
+    # Convertimos a número para que el eje X sea continuo y lineal
+    Año = as.numeric(Año_Texto),
+    
+    # Creamos un texto bonito para cuando pases el mouse
+    Tooltip_Text = paste0("<b>", `Grupo étnico`, "</b><br>",
+                          "Año: ", Año, "<br>",
+                          "Casos: ", format(Casos, big.mark = ","))
+  )
+
+# 3. GRÁFICO DE TENDENCIAS FACETADO (SEPARADO)
+g_tendencias_sep <- ggplot(plot_data, aes(x = Año, y = Casos, color = `Grupo étnico`)) +
+  
+  # Líneas y Puntos
+  geom_line(linewidth = 1.2) +
+  geom_point(aes(text = Tooltip_Text), size = 3) +
+  
+  # --- AQUÍ ESTÁ LA CLAVE: Separar en paneles ---
+  # ncol = 2 organiza los gráficos en 2 columnas
+  facet_wrap(~`Grupo étnico`, ncol = 2, scales="free_y") + 
+  
+  # Paleta de colores
+  scale_color_brewer(palette = "Set1") +
+  
+  # Ajustes de Ejes
+  scale_x_continuous(breaks = c(2019, 2020, 2021)) +
+  scale_y_continuous(labels = scales::comma, limits = c(0, NA)) + # El 0 asegura la comparabilidad
+  
+  labs(
+    title = "Evolución de desnutrición por grupo poblacional",
+    subtitle = "Tendencias separadas (2019-2021)",
+    x = "",
+    y = "Número de Casos (Escala variable)"
+  ) +
+  
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    strip.text = element_text(face = "bold", size = 12), # Títulos de cada panel más grandes
+    strip.background = element_rect(fill = "#f0f0f0", color = NA), # Fondo gris en títulos
+    legend.position = "none", # Ocultamos la leyenda (ya está en el título de cada panel)
+    panel.grid.minor = element_blank()
+  )
+
+# 4. INTERACTIVIDAD
+ggplotly(g_tendencias_sep, tooltip = "text") %>%
+  layout(
+    margin = list(t = 60)
+  )
+
+```
+
+## Datos Fuente
+
+```{r}
+make_download_table(data_nutricion, "data_nutricion")
+```
+
+En las poblaciones amazónicas, se observa una disminución progresiva en los registros de casos de desnutrición, desde el 2019 al 2021, a diferencia de los otros grupos étnicos. El 2019, registró 21 483; el 2020, 10 126 y el 2021, 7 473. Del 2019 al 2020, disminuyó 53% y del 2020 al 2021, 26%. En las poblaciones andinas, 2019, registró 15 223; el 2020, 6 756 y el 2021, 7 066. Del 2019 al 2020, disminuyó 56% y del 2020 al 2021, aumentó en 5%. En la población afroperuana, aumentaron levemente los registros de casos, el 2019, registró 71 casos de desnutrición; el 2020, 74 y el 2021, 117. Del 2019 al 2020, aumentó 4% y del 2020 al 2021, 58%. uno de los factores puede ser por la disminución de registros por la restricción de los servicios durante la pandemia por la Covid-19.
+
+:::
+
+
+## **Desnutrición en etnias del Perú 2019-2021**
+
+::: panel-tabset
+## Tabla dinámica
+En "categorías" se desagrega en Kwashiorkor; Marasmo nutricional; Desnutrición proteicocalórica severa, no especificada; Desnutrición proteicocalórica de grado moderado y leve; Retardo del desarrollo debido a desnutrición proteicocalórica; Desnutrición proteicocalórica, no especificada. En la catagoría total, se suma todos los casos.
+
+
+```{r}
+library(tidyverse)
+library(plotly)
+library(stringr)
+
+data_nutricion_etnias<- read_csv("data_nutricion_etnias.csv")
+data_nutricion_etnias<- data_nutricion_etnias%>%
+  select(Etnias, Categorías, `2019`, `2020`, `2021`)
+
+```
+```{r}
+
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sparkline)
+library(scales)
+
+# 2. PROCESAMIENTO
+# Añadimos una columna con la lista de valores para generar el 'Sparkline' (minigráfico)
+data_tabla <- data_nutricion_etnias %>%
+  rowwise() %>%
+  mutate(Tendencia = list(c(`2019`, `2020`, `2021`))) %>%
+  ungroup()
+
+# 3. CREACIÓN DE LA TABLA REACTABLE
+reactable(
+  data_tabla,
+  pagination = TRUE,
+  searchable = TRUE,
+  showPageSizeOptions = TRUE,
+  striped = TRUE,
+  highlight = TRUE,
+  defaultPageSize = 10,
+  
+  # Estilo general
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#aeeec9", # Color verde del encabezado original
+      fontWeight = "bold",
+      color = "#2e2e2e"
+    ),
+    borderColor = "#dfe2e5"
+  ),
+  
+  columns = list(
+    # Columna Etnias: Negrita y fondo suave
+    Etnias = colDef(
+      style = list(fontWeight = "bold", backgroundColor = "#f9fbf0"),
+      minWidth = 120
+    ),
+    
+    # Columna Categorías: Ancho suficiente para texto largo
+    Categorías = colDef(
+      minWidth = 250,
+      style = list(fontSize = "0.9em", color = "#444")
+    ),
+    
+    # Columna TENDENCIA (Sparkline)
+    # Esta es la columna mágica que replica la línea azul del Datawrapper
+    Tendencia = colDef(
+      name = "2019-2021",
+      cell = function(value, index) {
+        sparkline(data_tabla$Tendencia[[index]], 
+                  type = "line", 
+                  width = 100, 
+                  height = 25,
+                  lineColor = "#18a1cd", # Azul Datawrapper
+                  fillColor = "#d6eff7", # Relleno suave
+                  spotColor = FALSE, 
+                  minSpotColor = FALSE, 
+                  maxSpotColor = FALSE)
+      },
+      minWidth = 120
+    ),
+    
+    # Columnas de Años (Formateo simple)
+    `2019` = colDef(maxWidth = 70, align = "center"),
+    `2020` = colDef(maxWidth = 70, align = "center"),
+    `2021` = colDef(
+      maxWidth = 70, 
+      align = "center",
+      style = list(fontWeight = "bold", backgroundColor = "#f0f0f0") # Destacamos el último año
+    )
+  ),
+  
+  # Títulos y Fuentes
+  elementId = "tabla-desnutricion"
+) %>% 
+  # Título externo a la tabla (HTML)
+  htmlwidgets::prependContent(
+    h3("Desnutrición en etnias del Perú 2019-2021", 
+       style = "font-family: Arial; font-weight: bold; margin-bottom: 5px;"),
+    p('En "categorías" se desagrega el tipo de desnutrición. En la categoría total, se suma todos los casos.',
+      style = "font-family: Arial; color: #666; font-size: 0.9em; margin-bottom: 15px;")
+  )
+
+```
+Durante el periodo analizado, 2019 al 2021, las etnias con más registros de casos son Quechua, Awajún, Ashaninka, Aimara, Shipibo-Konibo. Casi en todos aparece primero la categoría retardo del desarrollo debido a desnutrición proteicocalórica, sin embargo, el 2020, en los Aimaras aparece primero la categoría, Desnutrición proteicocalórica, no especificada. El 2021, Quechuas y Aimaras tienen más casos registrados en la categoría Desnutrición proteicocalórica, no especificada. En las etnias amazónicas aparecen más casos de la categoría Retardo del desarrollo debido a desnutrición proteicocalórica.
+
+
+:::
+
+
+## **Desnutrición en poblaciones amazónicas por departamentos 2019-2021**
+
+::: panel-tabset
+## Tabla dinámica
+En "categorías" se desagrega en Kwashiorkor; Marasmo nutricional; Desnutrición proteicocalórica severa, no especificada; Desnutrición proteicocalórica de grado moderado y leve; Retardo del desarrollo debido a desnutrición proteicocalórica; Desnutrición proteicocalórica, no especificada. En "total", se suma todos los casos.
+
+
+```{r}
+library(tidyverse)
+library(plotly)
+library(stringr)
+
+data_nutricion_amazonica<- read_csv("data_amazonicas_depart.csv")
+data_nutricion_amazonica<- data_nutricion_amazonica%>%
+  select(Departamentos, Categorías, `2019`, `2020`, `2021`)
+
+```
+
+```{r}
+
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sparkline)
+
+# 2. PROCESAMIENTO
+# Añadimos una columna con la lista de valores para generar el 'Sparkline' (minigráfico)
+data_tabla <- data_nutricion_amazonica %>%
+  rowwise() %>%
+  mutate(Tendencia = list(c(`2019`, `2020`, `2021`))) %>%
+  ungroup()
+
+
+# 3. CREACIÓN DE LA TABLA REACTABLE
+reactable(
+  data_tabla,
+  pagination = TRUE,
+  searchable = TRUE,
+  showPageSizeOptions = TRUE,
+  striped = TRUE,
+  highlight = TRUE,
+  defaultPageSize = 10,
+  
+  # Estilo general
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#ffe082", # Color verde del encabezado original
+      fontWeight = "bold",
+      color = "#333"
+    ),
+    borderColor = "#ddd"
+  ),
+  
+  columns = list(
+    # Columna Etnias: Negrita y fondo suave
+    Departamentos = colDef(
+      style = list(fontWeight = "bold", backgroundColor = "#f3e2a9"),
+      minWidth = 130
+    ),
+    
+    # Columna Categorías: Ancho suficiente para texto largo
+    Categorías = colDef(
+      minWidth = 250,
+      style = list(fontSize = "0.9em", color = "#444")
+    ),
+    
+    # Columna TENDENCIA (Sparkline)
+    # Esta es la columna mágica que replica la línea azul del Datawrapper
+    Tendencia = colDef(
+      name = "2019-2021",
+      cell = function(value, index) {
+        sparkline(data_tabla$Tendencia[[index]], 
+                  type = "bar",          # Tipo BARRA (como en tu imagen)
+                  barColor = "#ffea00",  # Color de barra amarillo intenso
+                  chartRangeMin = 0,
+                  width = 80, 
+                  height = 20)
+      },
+      style = list(backgroundColor = "#fffde7"), # Fondo crema para continuidad
+      align = "center",
+      minWidth = 150
+    ),
+    
+    # Columnas de Años (Formateo simple)
+    `2019` = colDef(maxWidth = 70, align = "center"),
+    `2020` = colDef(maxWidth = 70, align = "center"),
+    `2021` = colDef(
+      maxWidth = 70, 
+      align = "center",
+      style = list(fontWeight = "bold", backgroundColor = "#f0f0f0") # Destacamos el último año
+    )
+  ),
+  
+  # Títulos y Fuentes
+  elementId = "tabla-desnutricion"
+) %>% 
+  # Título externo a la tabla (HTML)
+  htmlwidgets::prependContent(
+    h3("Desnutrición en poblaciones amazónicas del Perú 2019-2021", 
+       style = "font-family: Arial; font-weight: bold; margin-bottom: 5px;")
+  )
+
+```
+El 2019 y 2020 aparecen en este orden las regiones con mayores registros: Amazonas, Loreto, Junín y Ucayali, sumando más del 90% de los casos totales en las poblaciones amazónicas. El 2021, continua primero Amazonas, seguido de Junín, Ucayali y Loreto, sumando el 87%.
+
+:::
+
+
+## **Desnutrición en poblaciones andinas por departamentos 2019-2021**
+
+::: panel-tabset
+## Tabla dinámica
+En "categorías" se desagrega en Kwashiorkor; Marasmo nutricional; Desnutrición proteicocalórica severa, no especificada; Desnutrición proteicocalórica de grado moderado y leve; Retardo del desarrollo debido a desnutrición proteicocalórica; Desnutrición proteicocalórica, no especificada. En la categoría total, se suma todos los casos.
+
+```{r}
+library(tidyverse)
+library(plotly)
+library(stringr)
+
+data_nutricion_andinas<- read_csv("data_nutricion_andinas.csv")
+data_nutricion_andinas<- data_nutricion_andinas%>%
+  select(Departamentos, Categorías, `2019`, `2020`, `2021`)
+
+```
+
+```{r}
+
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sparkline)
+
+# 2. PROCESAMIENTO
+# Añadimos una columna con la lista de valores para generar el 'Sparkline' (minigráfico)
+data_tabla <- data_nutricion_andinas %>%
+  rowwise() %>%
+  mutate(Tendencia = list(c(`2019`, `2020`, `2021`))) %>%
+  ungroup()
+
+
+# 3. CREACIÓN DE LA TABLA REACTABLE
+reactable(
+  data_tabla,
+  pagination = TRUE,
+  searchable = TRUE,
+  showPageSizeOptions = TRUE,
+  striped = TRUE,
+  highlight = TRUE,
+  defaultPageSize = 10,
+  
+  # Estilo general
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#6CD4B2", # Color verde del encabezado original
+      fontWeight = "bold",
+      color = "#333"
+    ),
+    borderColor = "#ddd"
+  ),
+  
+  columns = list(
+    # Columna Etnias: Negrita y fondo suave
+    Departamentos = colDef(
+      style = list(fontWeight = "bold", backgroundColor = "#A3F2D9"),
+      minWidth = 130
+    ),
+    
+    # Columna Categorías: Ancho suficiente para texto largo
+    Categorías = colDef(
+      minWidth = 250,
+      style = list(backrunColor= "#CCF7E9", fontSize = "0.9em", color = "#333")
+    ),
+    
+    # Columna TENDENCIA (Sparkline)
+    # Esta es la columna mágica que replica la línea azul del Datawrapper
+    Tendencia = colDef(
+      name = "2019-2021",
+      cell = function(value, index) {
+        sparkline(data_tabla$Tendencia[[index]], 
+                  type = "bar",          # Tipo BARRA (como en tu imagen)
+                  barColor = "#FF9E75",  # Color de barra amarillo intenso
+                  chartRangeMin = 0,
+                  width = 80, 
+                  height = 20)
+      },
+      style = list(backgroundColor = "#CCF7E9"), # Fondo crema para continuidad
+      align = "center",
+      minWidth = 150
+    ),
+    
+    # Columnas de Años (Formateo simple)
+    `2019` = colDef(maxWidth = 70, align = "center"),
+    `2020` = colDef(maxWidth = 70, align = "center"),
+    `2021` = colDef(
+      maxWidth = 70, 
+      align = "center",
+      style = list(fontWeight = "bold", backgroundColor = "#f0f0f0") # Destacamos el último año
+    )
+  ),
+  
+  # Títulos y Fuentes
+  elementId = "tabla-desnutricion"
+) %>% 
+  # Título externo a la tabla (HTML)
+  htmlwidgets::prependContent(
+    h3("Desnutrición en poblaciones amazónicas del Perú 2019-2021", 
+       style = "font-family: Arial; font-weight: bold; margin-bottom: 5px;")
+  )
+
+```
+
+En todo el periodo analizado son estas las regiones con mayores registros de casos de desnutrición: Ancash, Ayacucho, Puno y Huancavelica, con más del 90% del total de casos de las poblaciones andinas.
+
+:::
+
+## **Desnutrición en población afroperuana por departamentos 2019-2021**
+
+::: panel-tabset
+
+## Tabla dinámica
+
+```{r}
+library(tidyverse)
+library(plotly)
+library(stringr)
+
+data_nutricion_afrodescendiente<- read_csv("data_nutricion_afro.csv")
+data_nutricion_afrodescendiente<- data_nutricion_afrodescendiente%>%
+  select(Departamento, Categorías, `2019`, `2020`, `2021`)
+
+```
+
+```{r}
+
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sparkline)
+
+# 2. PROCESAMIENTO
+# Añadimos una columna con la lista de valores para generar el 'Sparkline' (minigráfico)
+data_tabla <- data_nutricion_afrodescendiente %>%
+  rowwise() %>%
+  mutate(Tendencia = list(c(`2019`, `2020`, `2021`))) %>%
+  ungroup()
+
+
+# 3. CREACIÓN DE LA TABLA REACTABLE
+reactable(
+  data_tabla,
+  pagination = TRUE,
+  searchable = TRUE,
+  showPageSizeOptions = TRUE,
+  striped = TRUE,
+  highlight = TRUE,
+  defaultPageSize = 10,
+  
+  # Estilo general
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#66CDAA", # Color verde del encabezado original
+      fontWeight = "bold",
+      color = "#222"
+    ),
+    borderColor = "#fff"
+  ),
+  
+  columns = list(
+    # Columna Etnias: Negrita y fondo suave
+    Departamento = colDef(
+      style = list(fontWeight = "bold", backgroundColor = "#BEF7D6"),
+      minWidth = 130
+    ),
+    
+    # Columna Categorías: Ancho suficiente para texto largo
+    Categorías = colDef(
+      minWidth = 250,
+      style = list(backrunColor= "#98F5D0", fontSize = "0.9em", color = "#333")
+    ),
+    
+    # Columna TENDENCIA (Sparkline)
+    # Esta es la columna mágica que replica la línea azul del Datawrapper
+    Tendencia = colDef(
+      name = "2019-2021",
+      cell = function(value, index) {
+        sparkline(data_tabla$Tendencia[[index]], 
+                  type = "bar",          # Tipo BARRA (como en tu imagen)
+                  barColor = "#00C200",  # Color de barra amarillo intenso
+                  chartRangeMin = 0,
+                  width = 80, 
+                  height = 20)
+      },
+      style = list(backgroundColor = "#98F5D0"), # Fondo crema para continuidad
+      align = "center",
+      minWidth = 150
+    ),
+    
+    # Columnas de Años (Formateo simple)
+    `2019` = colDef(maxWidth = 70, align = "center"),
+    `2020` = colDef(maxWidth = 70, align = "center"),
+    `2021` = colDef(
+      maxWidth = 70, 
+      align = "center",
+      style = list(fontWeight = "bold", backgroundColor = "#f0f0f0") # Destacamos el último año
+    )
+  ),
+  
+  # Títulos y Fuentes
+  elementId = "tabla-desnutricion"
+) %>% 
+  # Título externo a la tabla (HTML)
+  htmlwidgets::prependContent(
+    h3("Desnutrición en poblacion afrodescendiente del Perú 2019-2021", 
+       style = "font-family: Arial; font-weight: bold; margin-bottom: 5px;")
+  )
+
+```
+El 2019, las regiones con más registro de casos son Apurímac y Cajamarca, en tanto que el 2020 y el 2021 es Piura.
+
+
