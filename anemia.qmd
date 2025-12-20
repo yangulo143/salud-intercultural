@@ -1,0 +1,1477 @@
+---
+title: "Anemia nutricional en la población afroperuana y en etnias andinas y amazónicas"
+subtitle: "Análisis de datos del Ministerio de Salud (MINSA)"
+date: last-modified
+author: "Subdirección de Medicina Tradicional, Interculturalidad e Investigación Social (SUMEC-CENSI)"
+format: 
+  html:
+    theme: cosmo
+    toc: true
+    page-layout: full
+    code-fold: true
+execute:
+  warning: false
+  message: false
+footer: "Fuente de datos: Sistema HISS-MINSA | Fecha de corte: 03/2024"
+---
+
+La Organización Mundial de la Salud define la anemia como una afección en que la cantidad de glóbulos rojos o concentración de hemoglobina es insuficiente, menor a lo normal. La anemia es considerada un grave problema de salud pública, que específicamente, en los niños afecta en su crecimiento y desarrollo normal.
+
+En nuestro país, según el Instituto Nacional de Estadísticas e Informáticas-INEI, el 2020, la prevalencia de anemia en niños de 6 a 35 meses de edad fue 40,0%, siendo con mayor proporción en el área rural (48,4%) que en el área urbana (36,7%). En el 2022, aumentó, a nivel nacional, la prevalencia de anemia en la población de 6 a 35 meses de edad fue 42,4%, con mayor proporción en el área rural (51,5%), que en la urbana (39,0%). Existiendo mayor incidencia en la Selva (52,5%) que en la Sierra (50,4%) y la Costa (34,4%). Por departamentos, la deficiencia de hemoglobina en la sangre afectó más a las niñas y niños de Puno (67,2%), Ucayali (65,8%) y Huancavelica (65,0%). 
+
+Desde el 2015-2020, la anemia disminuyó en 3,5 puntos porcentuales, pasó de 43,5% a 40,0%, pero se observa que en el 2022 aumentó tanto a nivel nacional como por áreas de residencia.
+
+A continuación, se analiza la data del HIS del Ministerio de Salud que registra las atenciones diarias de todos los establecimientos en nuestro país. El análisis se realiza según el CIE 10, sistema de clasificación internacional, elaborado por la Organización Mundial de la Salud, que permite el registro sistemático, análisis, interpretación, y comparación de los datos de mortalidad y morbilidad recolectados de los servicios de salud. Para este sistema, la anemia nutricional se desglosa en las siguientes categorías:
+
+-   Anemias por deficiencia de hierro
+
+-   Anemia por deficiencia de vitamina
+
+-   Anemia por deficiencia de folatos
+
+-   Otras anemias nutricionales
+
+## **Anemia nutricional por grupos étnicos 2019-2023**
+
+En el periodo analizado, la anemia nutricional afecta a los mestizos por encima del 90% del total de atenciones aunque el 2023 registró el 83% del total de atenciones. Seguido por los pueblos amazónicos, variando entre 5% y 6%. el 2023 aumentó al 13%. En las poblaciones andinas, desde el 2019 al 2022, en 1% el 2023, 4%. En la población afroperuana, varía entre 0.01% y 0.02% del total de atenciones en anemia nutricional.
+
+::: panel-tabset
+## Anemia Nutricional: Comparativa por Grupo Étnico
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# --- PARCHE DE SEGURIDAD PARA EL ERROR PNG ---
+# Esto evita que R intente abrir una ventana gráfica fallida en sistemas sin pantalla
+options(bitmapType = 'cairo') 
+
+library(tidyverse)
+library(plotly)
+library(DT)
+
+# --- FUNCIÓN AUXILIAR PARA TABLAS DE DESCARGA ---
+# Esta función crea estandariza el botón de Excel para todos los gráficos
+make_download_table <- function(data_input, filename_label = "datos") {
+  datatable(
+    data_input,
+    extensions = 'Buttons',
+    rownames = FALSE,
+    options = list(
+      dom = 'Bfrtip',
+      buttons = list(
+        list(extend = 'excel', filename = filename_label, title = filename_label),
+        list(extend = 'csv', filename = filename_label)
+      ),
+      pageLength = 5, # Pocas filas para no ocupar mucho espacio
+      scrollX = TRUE,
+      language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')
+    )
+  )
+}
+
+# 1. DATOS (Anemia en poblaciones originarias)
+# Escalas muy distintas: Mestizos (miles) vs Afroperuanos (decenas)
+data_anemia <- tribble(
+  ~Grupo, ~Anio, ~Atenciones,
+  "Población Afroperuana", "2019", 97,
+  "Población Afroperuana", "2020", 81,
+  "Población Afroperuana", "2021", 111,
+  "Población Afroperuana", "2022", 112,
+  "Población Afroperuana", "2023", 52,
+  "Población Afroperuana", "2024", 33,
+  "Población Afroperuana", "2025", 101,
+  
+  "Poblaciones Andinas", "2019", 10088,
+  "Poblaciones Andinas", "2020", 5987,
+  "Poblaciones Andinas", "2021", 6293,
+  "Poblaciones Andinas", "2022", 6745,
+  "Poblaciones Andinas", "2023", 9239,
+  "Poblaciones Andinas", "2024", 9436,
+  "Poblaciones Andinas", "2025", 6196,
+  
+  "Poblaciones Amazónicas", "2019", 34830,
+  "Poblaciones Amazónicas", "2020", 23130,
+  "Poblaciones Amazónicas", "2021", 25934,
+  "Poblaciones Amazónicas", "2022", 32197,
+  "Poblaciones Amazónicas", "2023", 28642,
+  "Poblaciones Amazónicas", "2024", 27003,
+  "Poblaciones Amazónicas", "2025", 20130,
+  
+  "Mestizos", "2019", 678800,
+  "Mestizos", "2020", 389869,
+  "Mestizos", "2021", 426750,
+  "Mestizos", "2022", 471341,
+  "Mestizos", "2023", 180180,
+  "Mestizos", "2024", 444001,
+  "Mestizos", "2025", 299127
+)
+
+# 2. DEFINICIÓN DE COLORES (Paleta consistente con Flourish)
+colores_anio <- c(
+  "2019" = "#ffd84d", 
+  "2020" = "#cbadf0", 
+  "2021" = "#88e99a", 
+  "2022" = "#ff6283", 
+  "2023" = "#1aa7ee", 
+  "2024" = "#ffc502", 
+  "2025" = "#019c00"
+)
+
+# 3. GRÁFICO BASE (GGPLOT2)
+# Usamos facet_wrap con 'scales="free_y"' para que las barras pequeñas (Afro)
+# no desaparezcan al lado de las grandes (Mestizos).
+p <- ggplot(data_anemia, aes(x = Anio, y = Atenciones, fill = Anio, 
+                             text = paste0("<b>", Grupo, "</b><br>Año: ", Anio, "<br>Atenciones: ", format(Atenciones, big.mark=",")))) +
+  geom_col(position = "dodge", width = 0.7) +
+  facet_wrap(~Grupo, scales = "free_y", ncol = 2) + # 2 Columnas para mejor lectura
+  scale_fill_manual(values = colores_anio) +
+  theme_minimal() +
+  labs(y = "", x = "") +
+  theme(
+    legend.position = "none", # La leyenda la pondremos en plotly
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+# 4. CONVERSIÓN A INTERACTIVO
+ggplotly(p, tooltip = "text") %>%
+  layout(
+    title = list(text = "", font = list(size = 18)),
+    margin = list(t = 60, b = 80),
+    legend = list(orientation = "h", x = 0.5, xanchor = "center", y = -0.15)
+  ) %>%
+  config(responsive = TRUE, displayModeBar = FALSE)
+
+```
+
+## Data Fuente
+
+```{r}
+
+make_download_table(data_anemia, filename_label = "Anemia_Nutricional_Por_Grupo_Etnico_2019_2023")
+
+```
+:::
+
+## **Tipos de anemia nutricional en poblaciones amazónicas, andinas y afroperuana 2019-2023**
+
+En todos los grupos étnicos prima el tipo de anemia nutricional, por deficiencia de hierro, más del 97% de los casos registrados.
+
+::: panel-tabset
+## Tipo de anemia nutricional en poblaciones amazónicas, andinas y afroperuana 2019-2025
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-align: "center"
+#| dev: "svg"
+
+# Configuración gráfica segura
+options(bitmapType = 'cairo')
+
+library(tidyverse)
+library(plotly)
+
+# 1. DATOS
+data_tipo_anemia <- tribble(
+  ~Grupo, ~Categoria, ~Anio, ~Atenciones,
+  "Amazónicos", "Deficiencia de hierro", "2019", 34430,
+  "Amazónicos", "Deficiencia de hierro", "2020", 22722,
+  "Amazónicos", "Deficiencia de hierro", "2021", 25609,
+  "Amazónicos", "Deficiencia de hierro", "2022", 31590,
+  "Amazónicos", "Deficiencia de hierro", "2023", 27951,
+  "Amazónicos", "Deficiencia de hierro", "2024", 27291,
+  "Amazónicos", "Deficiencia de hierro", "2025", 18561,
+  "Amazónicos", "Deficiencia de vitamina", "2019", 36,
+  "Amazónicos", "Deficiencia de vitamina", "2020", 21,
+  "Amazónicos", "Deficiencia de vitamina", "2021", 57,
+  "Amazónicos", "Deficiencia de vitamina", "2022", 318,
+  "Amazónicos", "Deficiencia de vitamina", "2023", 108,
+  "Amazónicos", "Deficiencia de vitamina", "2024", 93,
+  "Amazónicos", "Deficiencia de vitamina", "2025", 36,
+  "Amazónicos", "Deficiencia de folatos", "2019", 23,
+  "Amazónicos", "Deficiencia de folatos", "2020", 20,
+  "Amazónicos", "Deficiencia de folatos", "2021", 20,
+  "Amazónicos", "Deficiencia de folatos", "2022", 13,
+  "Amazónicos", "Deficiencia de folatos", "2023", 52,
+  "Amazónicos", "Deficiencia de folatos", "2024", 64,
+  "Amazónicos", "Deficiencia de folatos", "2025", 70,
+  "Amazónicos", "Otras anemias", "2019", 341,
+  "Amazónicos", "Otras anemias", "2020", 367,
+  "Amazónicos", "Otras anemias", "2021", 248,
+  "Amazónicos", "Otras anemias", "2022", 276,
+  "Amazónicos", "Otras anemias", "2023", 531,
+  "Amazónicos", "Otras anemias", "2024", 498,
+  "Amazónicos", "Otras anemias", "2025", 520,
+
+  "Andinos", "Deficiencia de hierro", "2019", 9891,
+  "Andinos", "Deficiencia de hierro", "2020", 5886,
+  "Andinos", "Deficiencia de hierro", "2021", 6198,
+  "Andinos", "Deficiencia de hierro", "2022", 6593,
+  "Andinos", "Deficiencia de hierro", "2023", 8967,
+  "Andinos", "Deficiencia de hierro", "2024", 9172,
+  "Andinos", "Deficiencia de hierro", "2025", 6005,
+  "Andinos", "Deficiencia de vitamina", "2019", 12,
+  "Andinos", "Deficiencia de vitamina", "2020", 5,
+  "Andinos", "Deficiencia de vitamina", "2021", 5,
+  "Andinos", "Deficiencia de vitamina", "2022", 24,
+  "Andinos", "Deficiencia de vitamina", "2023", 37,
+  "Andinos", "Deficiencia de vitamina", "2024", 55,
+  "Andinos", "Deficiencia de vitamina", "2025", 27,
+  "Andinos", "Deficiencia de folatos", "2019", 12,
+  "Andinos", "Deficiencia de folatos", "2020", 6,
+  "Andinos", "Deficiencia de folatos", "2021", 11,
+  "Andinos", "Deficiencia de folatos", "2022", 8,
+  "Andinos", "Deficiencia de folatos", "2023", 10,
+  "Andinos", "Deficiencia de folatos", "2024", 21,
+  "Andinos", "Deficiencia de folatos", "2025", 13,
+  "Andinos", "Otras anemias", "2019", 173,
+  "Andinos", "Otras anemias", "2020", 90,
+  "Andinos", "Otras anemias", "2021", 79,
+  "Andinos", "Otras anemias", "2022", 120,
+  "Andinos", "Otras anemias", "2023", 225,
+  "Andinos", "Otras anemias", "2024", 188,
+  "Andinos", "Otras anemias", "2025", 151,
+
+  "Afroperuanos", "Deficiencia de hierro", "2019", 94,
+  "Afroperuanos", "Deficiencia de hierro", "2020", 78,
+  "Afroperuanos", "Deficiencia de hierro", "2021", 111,
+  "Afroperuanos", "Deficiencia de hierro", "2022", 112,
+  "Afroperuanos", "Deficiencia de hierro", "2023", 51,
+  "Afroperuanos", "Deficiencia de hierro", "2024", 33,
+  "Afroperuanos", "Deficiencia de hierro", "2025", 99,
+  "Afroperuanos", "Deficiencia de folatos", "2019", 1,
+  "Afroperuanos", "Otras anemias", "2019", 2,
+  "Afroperuanos", "Otras anemias", "2020", 3,
+  "Afroperuanos", "Otras anemias", "2023", 1,
+  "Afroperuanos", "Otras anemias", "2025", 2
+)
+
+# Ordenar factor para que "Hierro" salga primero
+data_tipo_anemia$Categoria <- factor(data_tipo_anemia$Categoria, 
+                                     levels = c("Otras anemias", 
+                                                "Deficiencia de folatos", 
+                                                "Deficiencia de vitamina", 
+                                                "Deficiencia de hierro"))
+
+colores <- c(
+  "2019" = "#ffd84d", "2020" = "#cbadf0", "2021" = "#88e99a",
+  "2022" = "#f6ff75", "2023" = "#9bf3f8", "2024" = "#ffc502", 
+  "2025" = "#ff6283"
+)
+
+# 3. FUNCIÓN GENERADORA
+crear_subplot <- function(datos, nombre_grupo, mostrar_leyenda = FALSE) {
+  plot_ly(
+    data = datos %>% filter(Grupo == nombre_grupo),
+    x = ~Atenciones,
+    y = ~Categoria,
+    type = 'bar',
+    orientation = 'h',
+    color = ~Anio,
+    colors = colores,
+    legendgroup = ~Anio,
+    showlegend = mostrar_leyenda,
+    
+    # Tooltip corregido: muestra el año limpio
+    customdata = ~Anio,
+    hovertemplate = paste0(
+      "<b>", nombre_grupo, "</b><br>",
+      "Tipo: %{y}<br>",
+      "Año: %{customdata}<br>",
+      "Casos: %{x:,.0f}<extra></extra>"
+    )
+  ) %>%
+    layout(
+      xaxis = list(title = "Atenciones"),
+      # automargin = TRUE asegura que las etiquetas largas no se corten
+      yaxis = list(title = "", automargin = TRUE) 
+    )
+}
+
+# 4. CREAR PANELES
+p1 <- crear_subplot(data_tipo_anemia, "Amazónicos", mostrar_leyenda = TRUE)
+p2 <- crear_subplot(data_tipo_anemia, "Andinos", mostrar_leyenda = FALSE)
+p3 <- crear_subplot(data_tipo_anemia, "Afroperuanos", mostrar_leyenda = FALSE)
+
+# 5. SUBPLOT + ANOTACIONES LATERALES (HEADERS)
+subplot(p1, p2, p3, nrows = 3, shareX = FALSE, titleY = FALSE, margin = 0.05) %>%
+  layout(
+    # Margen izquierdo muy amplio para que quepan los títulos y las categorías
+    margin = list(t = 40, l = 280, r = 20), 
+    legend = list(orientation = "h", x = 0.5, xanchor = "center", y = -0.05),
+    height = 900, # Altura interna necesaria
+    # ANOTACIONES ROTADAS (-90 grados)
+    annotations = list(
+      list(
+        x = -0.5, y = 0.9, # Ajusta Y según necesites centrar visualmente
+        text = "<b>AMAZÓNICOS</b>", 
+        textangle = -90,    # Rotación vertical
+        showarrow = F, xref='paper', yref='paper', xanchor='center',
+        font = list(size = 14, color = "black")
+      ),
+      list(
+        x = -0.5, y = 0.5, 
+        text = "<b>ANDINOS</b>", 
+        textangle = -90,    # Rotación vertical
+        showarrow = F, xref='paper', yref='paper', xanchor='center',
+        font = list(size = 14, color = "black")
+      ),
+      list(
+        x = -0.5, y = 0.1, 
+        text = "<b>AFROPERUANOS</b>", 
+        textangle = -90,    # Rotación vertical
+        showarrow = F, xref='paper', yref='paper', xanchor='center',
+        font = list(size = 14, color = "black")
+      )
+    )
+  ) %>%
+  config(responsive = TRUE, displayModeBar = FALSE)
+```
+## Data Fuente
+```{r}
+make_download_table(data_tipo_anemia, filename_label = "Tipo_de_Anemia_Nutricional_2019_2023")
+```
+:::
+
+## **Anemia nutricional en pueblos indígenas u originarios 2019-2023**
+
+Las etnias con más registros de casos por anemia, son los Awajún, Ashaninka, Shawi, Shipibo-Konibo Kichwa, representan más del 50% del total de casos entre las etnias amazónicas, en casi todo el periodo analizado. Desde el 2019 al 2022, los awajún tiene los mayores registros de casos. Entre los pueblos andinos, los quechuas, tiene los mayores registros, después de los awajún, con excepción del 2023, en que apareció en primer lugar con el 23% del total de atendidos.  Asimismo, en todos estos pueblos mencionados hay una disminución en los registros de casos en relación el 2019, esto no significa la disminución de casos de este problema de salud.  Puede deberse a otros factores como la interrupción de los servicios o su reorganización para priorizar las atenciones por Covid-19. 
+
+En el 2022, el registro de los kukama kukamiria, se incrementó en  más del 50% con respecto al  2020 y 2021. 
+
+::: panel-tabset
+
+## Anemia nutricional en pueblos indígenas u originarios del Perú 2019-2025
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(reactablefmtr)
+library(htmltools)
+library(scales)
+library(sparkline) # <--- NUEVA LIBRERÍA (CRAN)
+
+# 1. CARGA Y LIMPIEZA DE DATOS
+data_raw <- read_csv("data-N2UBp.csv", show_col_types = FALSE, col_types = cols(.default = "c"))
+
+data_clean <- data_raw %>%
+  select(Etnias, `2019`, `2020`, `2021`, `2022`, `2023`, `2024`, `2025`) %>%
+  mutate(across(`2019`:`2025`, function(x) {
+    x_clean <- str_remove_all(x, "[, ]")
+    x_clean <- ifelse(x_clean == "-" | x_clean == "", NA, x_clean)
+    as.numeric(x_clean)
+  })) %>%
+  mutate(across(where(is.numeric), ~replace_na(., 0)))
+
+# 2. CREAR COLUMNA TENDENCIA (Lista de valores)
+data_final <- data_clean %>%
+  rowwise() %>%
+  mutate(Trend = list(c_across(`2019`:`2025`))) %>%
+  ungroup()
+
+# 3. CONFIGURACIÓN DEL HEATMAP
+dw_colors <- c("#fcfcbe", "#fdc78d", "#fb8d67", "#e45563", "#ac337b", "#6b1f7b", "#2c1160")
+rango_global <- range(data_final %>% select(`2019`:`2025`), na.rm = TRUE)
+col_fun <- col_numeric(palette = dw_colors, domain = rango_global, na.color = "#f9f9f9")
+
+estilo_heatmap <- function(value) {
+  if (is.na(value)) return(list(background = "#f9f9f9"))
+  bg_color <- col_fun(value)
+  umbral_texto_blanco <- quantile(rango_global, 0.6) 
+  text_color <- if (value > umbral_texto_blanco) "#ffffff" else "#000000"
+  list(background = bg_color, color = text_color, fontWeight = "400")
+}
+
+# 4. TABLA REACTABLE CON SPARKLINE (VERSIÓN ROBUSTA)
+tabla_final <- reactable(
+  data_final,
+  pagination = FALSE,
+  highlight = TRUE,
+  compact = TRUE,
+  searchable = TRUE,
+  defaultSorted = "2019",
+  defaultSortOrder = "desc",
+  
+  theme = reactableTheme(
+    style = list(fontFamily = "Roboto, Arial, sans-serif", fontSize = "13px"),
+    headerStyle = list(
+      backgroundColor = "#ffffff",
+      borderBottom = "2px solid #333",
+      textTransform = "uppercase",
+      fontWeight = "bold",
+      fontSize = "12px",
+      color = "#333"
+    )
+  ),
+  
+  columns = list(
+    Etnias = colDef(
+      name = "ETNIAS",
+      minWidth = 130,
+      style = list(fontWeight = "bold", borderRight = "1px solid #eee", backgroundColor = "#fff"),
+      sticky = "left"
+    ),
+    `2019` = colDef(style = estilo_heatmap, format = colFormat(separators = TRUE), minWidth = 60, align = "center"),
+    `2020` = colDef(style = estilo_heatmap, format = colFormat(separators = TRUE), minWidth = 60, align = "center"),
+    `2021` = colDef(style = estilo_heatmap, format = colFormat(separators = TRUE), minWidth = 60, align = "center"),
+    `2022` = colDef(style = estilo_heatmap, format = colFormat(separators = TRUE), minWidth = 60, align = "center"),
+    `2023` = colDef(style = estilo_heatmap, format = colFormat(separators = TRUE), minWidth = 60, align = "center"),
+    `2024` = colDef(style = estilo_heatmap, format = colFormat(separators = TRUE), minWidth = 60, align = "center"),
+    `2025` = colDef(style = estilo_heatmap, format = colFormat(separators = TRUE), minWidth = 60, align = "center"),
+    
+    # --- AQUÍ ESTÁ EL CAMBIO IMPORTANTE ---
+    # Usamos la librería 'sparkline' directamente, sin depender de 'dataui'
+    Trend = colDef(
+      name = "Tendencia",
+      minWidth = 100,
+      align = "center",
+      cell = function(value, index) {
+        sparkline(
+          data_final$Trend[[index]], 
+          type = "line", 
+          width = 100, 
+          height = 25,
+          lineColor = "#1d81a2", 
+          fillColor = FALSE, 
+          lineWidth = 2,
+          spotColor = FALSE, 
+          minSpotColor = FALSE, 
+          maxSpotColor = "#1d81a2", # Resalta el pico máximo
+          lastSpotColor = "#1d81a2", # Resalta el último valor (punto final)
+          spotRadius = 3,
+          tooltipChartTitle = "Tendencia",
+          disableInteraction = FALSE # Permite ver valores al pasar el mouse
+        )
+      }
+    )
+  )
+)
+
+# 5. RENDERIZADO
+# Necesario para activar las dependencias JS de sparkline en el HTML final
+browsable(
+  tagList(
+    tags$head(tags$style(".jqsfield { font-family: 'Roboto', sans-serif; }")), # Estilo tooltip
+    div(
+      style = "font-family: 'Roboto', sans-serif; max-width: 950px; margin: 0 auto;",
+      h3("Anemia nutricional en pueblos indígenas u originarios del Perú 2019-2025", 
+         style = "margin-bottom: 5px; font-weight: 700; font-size: 20px; color: #333;"),
+      div(style = "margin-bottom: 10px;", tabla_final),
+      div(
+        style = "border-top: 1px solid #ccc; padding-top: 10px; font-size: 11px; color: #666; line-height: 1.4;",
+        p(style = "margin: 0 0 5px;", "Considera establecimientos MINSA, EsSalud, FFAA y privados."),
+        div(
+          style = "display: flex; justify-content: space-between; margin-top: 10px;",
+          span(strong("Fuente: "), "HIS MINSA"),
+          span(strong("Gráfico: "), "CENSI")
+        )
+      )
+    )
+  )
+)
+```
+## Data Fuente
+```{r}
+make_download_table(data_final, filename_label = "Anemia_Nutricional_Pueblos_Indigenas_2019_2023")
+```
+
+:::
+
+## **Anemia nutricional en poblaciones amazónicas, andinas y afroperuana por sexo 2019-2023**
+
+De manera similar que en las etnias amazónicas y en la población afroperuana, las poblaciones andinas tienen mayores registros de anemia nutricional en mujeres. Entre los amazónicos, los casos en mujeres representan entre el 53% y 56% en el periodo analizado, en los andinos entre 51% y 55% aunque el 2022, los registros de atenciones en hombres representó al 59%. En los afroperuanos varió entre 57%y 66%, el 2023 se elevó a 77%.
+
+::: panel-tabset
+## Anemia nutricional por sexo en poblaciones amazónicas, andinas y afroperuana 2019-2023
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-align: "center"
+#| fig-height: 8
+#| dev: "svg"
+
+# Configuración de seguridad para servidores
+options(bitmapType = 'cairo')
+
+library(tidyverse)
+library(plotly)
+library(scales)
+
+# 1. CARGA Y PREPARACIÓN DE DATOS
+# Leemos el archivo real que subiste
+data_raw <- read_csv("data-4zue0.csv", show_col_types = FALSE)
+
+# Transformamos los datos para el gráfico
+data_grafico <- data_raw %>%
+  # Pasamos de formato ancho (columna F y M) a largo (Columna Sexo y Valor)
+  pivot_longer(cols = c("F", "M"), names_to = "Sexo", values_to = "Atenciones") %>%
+  mutate(
+    # Lógica de espejo: Hombres a la izquierda (-), Mujeres a la derecha (+)
+    Atenciones_Plot = ifelse(Sexo == "M", -Atenciones, Atenciones),
+    # Etiqueta de texto siempre positiva para el tooltip
+    Label_Text = format(Atenciones, big.mark = ","),
+    # Etiquetas de sexo más descriptivas
+    Sexo_Label = ifelse(Sexo == "F", "Mujeres", "Hombres"),
+    # Ordenamos Año como factor descendente para que 2023 salga arriba
+    Anio = factor(Año, levels = sort(unique(Año)))
+  )
+
+# 2. COLORES EXACTOS (Estilo Datawrapper)
+# F (Mujeres) = Lila, M (Hombres) = Amarillo
+cols_sexo <- c("F" = "#d9c4fd", "M" = "#fbefa3")
+
+# 3. FUNCIÓN PARA CREAR CADA PIRÁMIDE (SUBPLOT)
+crear_piramide <- function(df, nombre_grupo, mostrar_leyenda = FALSE) {
+  
+  # Calculamos el rango máximo simétrico para este grupo específico
+  # Esto es vital para que el 0 quede exactamente al centro
+  max_val <- max(abs(df$Atenciones_Plot), na.rm = TRUE) * 1.1
+  
+  # Crear los valores y textos del eje X (para mostrar positivos a ambos lados)
+  # Generamos 3 cortes a la izquierda y 3 a la derecha aprox
+  breaks_x <- pretty(c(0, max_val), n = 3)
+  tick_vals <- c(-rev(breaks_x), breaks_x[-1]) # Valores reales (negativos y positivos)
+  tick_text <- c(rev(breaks_x), breaks_x[-1])  # Textos (todos positivos)
+  # Formateamos a "10k" si son números grandes para limpieza
+  tick_text_fmt <- ifelse(tick_text >= 1000, 
+                          paste0(round(tick_text/1000, 1), "k"), 
+                          as.character(tick_text))
+  
+  plot_ly(data = df, 
+          y = ~Anio, 
+          x = ~Atenciones_Plot, 
+          color = ~Sexo, 
+          colors = cols_sexo,
+          type = 'bar', 
+          orientation = 'h',
+          legendgroup = ~Sexo, 
+          showlegend = mostrar_leyenda,
+          hoverinfo = "text",
+          text = ~Label_Text, # Texto que sale al pasar el mouse (número formateado)
+          textposition = "none",
+          hovertemplate = paste0(
+            "<b>", nombre_grupo, "</b><br>",
+            "Año: %{y}<br>",
+            "Sexo: %{data.name}<br>", 
+            "Casos: %{text}<extra></extra>"
+          )
+  ) %>%
+    layout(
+      xaxis = list(
+        title = "",
+        range = c(-max_val, max_val), # Forzar simetría
+        tickmode = "array",
+        tickvals = tick_vals,
+        ticktext = tick_text_fmt,
+        zeroline = TRUE, 
+        zerolinecolor = "#444", # Línea central oscura
+        zerolinewidth = 1.5,
+        gridcolor = "#eee"
+      ),
+      yaxis = list(title = "", type = "category"),
+      barmode = 'relative', # Esto permite el apilado positivo/negativo
+      
+      # Título del grupo dentro del gráfico
+      annotations = list(
+        x = 0, y = 1.15, 
+        text = paste0("<b>", nombre_grupo, "</b>"), 
+        showarrow = F, xref='paper', yref='paper', xanchor='center',
+        font = list(size = 14)
+      )
+    )
+}
+
+# 4. GENERAR Y UNIR LOS GRÁFICOS
+# Filtramos y creamos uno por uno
+p1 <- crear_piramide(data_grafico %>% filter(`Grupo étnico` == "Amazónicos"), "Amazónicos", TRUE)
+p2 <- crear_piramide(data_grafico %>% filter(`Grupo étnico` == "Andinos"), "Andinos", FALSE)
+p3 <- crear_piramide(data_grafico %>% filter(`Grupo étnico` == "Afroperuanos"), "Afroperuanos", FALSE)
+
+# Unimos verticalmente
+subplot(p1, p2, p3, nrows = 3, shareY = TRUE, titleX = TRUE, margin = 0.08) %>%
+  layout(
+    title = list(text = "", font = list(size = 18)),
+    # Leyenda centrada abajo
+    legend = list(orientation = "h", x = 0.5, y = -0.07, xanchor = "center"),
+    # Márgenes ajustados para limpieza
+    margin = list(t = 60, l = 70, r = 30, b = 80),
+    height = 800
+  ) %>%
+  config(responsive = TRUE, displayModeBar = FALSE)
+
+```
+
+## Data Fuente
+```{r}
+
+make_download_table(data_grafico, filename_label = "Anemia_Nutricional_Por_Sexo_2019_2023")
+```
+
+:::
+
+## **Anemia nutricional en poblaciones amazónicas, andinas y afroperuana por curso de vida 2019-2023**
+
+En los pueblos amazónicos, los casos de anemia nutricional afectan más a los niños de 1 a 5 años, en el periodo analizado vario entre 43% y 56%; seguido por los niños de 1 a 11 meses, registró entre 16% y 19% del total de casos.
+
+En los andinos, los mayores registros de anemia nutricional también se dan principalmente en los niños de 1 a 5 años, entre 49% y 60%; seguido por los niños de 1 a 11 meses.
+
+En la población afroperuana, se da los niños de 1 a 5 años, en el periodo analizado vario entre el 42% y 50%. El 2019 fue seguido por los adultos de 30 a 59 años con el 19% de los casos; el 2020 y 2022 por los niños de 1 a 11 meses, con 24% y 21%, respectivamente. El 2021 por los adultos mayores con 17% de los casos totales en ese año. El 2023 hubo más atenciones en adultos con 33%, seguido por adultos mayores con 21%.
+
+::: panel-tabset
+
+## Población Amazónica: Anemia por curso de vida (2019-2025)
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-align: "center"
+#| fig-height: 5
+
+library(tidyverse)
+library(plotly)
+
+# 1. DATOS
+csv_data <- "Grupo,Etapa,Anio,Atenciones
+Amazónicos,< 01m,2019,38
+Amazónicos,< 01m,2020,14
+Amazónicos,< 01m,2021,29
+Amazónicos,< 01m,2022,21
+Amazónicos,< 01m,2023,12
+Amazónicos,< 01m,2024,7
+Amazónicos,< 01m,2025,9
+Amazónicos,01-11m,2019,6526
+Amazónicos,01-11m,2020,4111
+Amazónicos,01-11m,2021,4986
+Amazónicos,01-11m,2022,5827
+Amazónicos,01-11m,2023,4591
+Amazónicos,01-11m,2024,4411
+Amazónicos,01-11m,2025,2007
+Amazónicos,01-05a,2019,19543
+Amazónicos,01-05a,2020,11308
+Amazónicos,01-05a,2021,11915
+Amazónicos,01-05a,2022,14070
+Amazónicos,01-05a,2023,12410
+Amazónicos,01-05a,2024,11065
+Amazónicos,01-05a,2025,6516
+Amazónicos,06-11a,2019,3038
+Amazónicos,06-11a,2020,2656
+Amazónicos,06-11a,2021,2662
+Amazónicos,06-11a,2022,3576
+Amazónicos,06-11a,2023,3309
+Amazónicos,06-11a,2024,3512
+Amazónicos,06-11a,2025,2788
+Amazónicos,12-17a,2019,1446
+Amazónicos,12-17a,2020,1182
+Amazónicos,12-17a,2021,1320
+Amazónicos,12-17a,2022,2123
+Amazónicos,12-17a,2023,2036
+Amazónicos,12-17a,2024,2300
+Amazónicos,12-17a,2025,2092
+Amazónicos,18-29a,2019,1384
+Amazónicos,18-29a,2020,1237
+Amazónicos,18-29a,2021,1553
+Amazónicos,18-29a,2022,2027
+Amazónicos,18-29a,2023,1887
+Amazónicos,18-29a,2024,1863
+Amazónicos,18-29a,2025,1624
+Amazónicos,30-59a,2019,2084
+Amazónicos,30-59a,2020,1925
+Amazónicos,30-59a,2021,2551
+Amazónicos,30-59a,2022,3249
+Amazónicos,30-59a,2023,2979
+Amazónicos,30-59a,2024,3123
+Amazónicos,30-59a,2025,2656
+Amazónicos,60a >,2019,771
+Amazónicos,60a >,2020,697
+Amazónicos,60a >,2021,918
+Amazónicos,60a >,2022,1304
+Amazónicos,60a >,2023,1418
+Amazónicos,60a >,2024,1665
+Amazónicos,60a >,2025,1495"
+
+# 2. LIMPIEZA
+data_raw <- read.csv(text = csv_data)
+orden_etapas <- c("< 01m", "01-11m", "01-05a", "06-11a", "12-17a", "18-29a", "30-59a", "60a >")
+
+data_amazonicos <- data_raw %>%
+  mutate(Etapa = factor(Etapa, levels = orden_etapas)) %>% # Sin rev() aquí para plot_ly nativo
+  complete(Etapa, Anio, fill = list(Atenciones = 0, Grupo = "Amazónicos")) %>%
+  arrange(Anio, Etapa)
+
+# Máximo valor para fijar el eje X y que la animación no salte
+max_x <- max(data_amazonicos$Atenciones) * 1.1
+
+# 3. GRÁFICO AMAZÓNICOS
+plot_ly(
+  data = data_amazonicos,
+  x = ~Atenciones,
+  y = ~Etapa,
+  frame = ~Anio, # Activa el filtro por año (Slider)
+  type = 'bar',
+  orientation = 'h',
+  marker = list(color = "#dc9bee"), # Color Amazónico
+  text = ~format(Atenciones, big.mark = ","),
+  textposition = "auto",
+  hovertemplate = "<b>%{y}</b><br>Atenciones: %{x:,.0f}<extra></extra>"
+) %>%
+  layout(
+    title = list(text = " ", x = 0.05),
+    xaxis = list(title = "Número de Atenciones", range = c(0, max_x), zeroline = TRUE),
+    yaxis = list(title = ""),
+    margin = list(l = 80),
+    showlegend = FALSE,
+    # Configuración de la animación suave
+    updatemenus = list(list(
+      type = "buttons", showactive = FALSE, x = 0, y = 1.15,
+      buttons = list(
+        list(label = "▶ Reproducir", method = "animate", 
+             args = list(NULL, list(frame = list(duration = 800, redraw = TRUE), fromcurrent = TRUE))),
+        list(label = "|| Pausa", method = "animate", 
+             args = list(list(NULL), list(frame = list(duration = 0, redraw = FALSE), mode = "immediate")))
+      )
+    ))
+  ) %>%
+  animation_opts(frame = 800, easing = "cubic-out", redraw = TRUE) %>%
+  animation_slider(currentvalue = list(prefix = "Año: ")) %>%
+  config(displayModeBar = FALSE)
+```
+
+## Población Andina: Anemia por curso de vida (2019-2025)
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-align: "center"
+#| fig-height: 5
+
+library(tidyverse)
+library(plotly)
+
+# 1. DATOS
+csv_data_and <- "Grupo,Etapa,Anio,Atenciones
+Andinos,< 01m,2019,6
+Andinos,< 01m,2020,1
+Andinos,< 01m,2021,1
+Andinos,< 01m,2022,1
+Andinos,< 01m,2023,1
+Andinos,< 01m,2024,2
+Andinos,< 01m,2025,0
+Andinos,01-11m,2019,1727
+Andinos,01-11m,2020,1259
+Andinos,01-11m,2021,1089
+Andinos,01-11m,2022,1138
+Andinos,01-11m,2023,1109
+Andinos,01-11m,2024,839
+Andinos,01-11m,2025,395
+Andinos,01-05a,2019,5970
+Andinos,01-05a,2020,3408
+Andinos,01-05a,2021,3805
+Andinos,01-05a,2022,3679
+Andinos,01-05a,2023,4632
+Andinos,01-05a,2024,4316
+Andinos,01-05a,2025,2269
+Andinos,06-11a,2019,957
+Andinos,06-11a,2020,475
+Andinos,06-11a,2021,516
+Andinos,06-11a,2022,663
+Andinos,06-11a,2023,940
+Andinos,06-11a,2024,1005
+Andinos,06-11a,2025,501
+Andinos,12-17a,2019,454
+Andinos,12-17a,2020,232
+Andinos,12-17a,2021,228
+Andinos,12-17a,2022,415
+Andinos,12-17a,2023,769
+Andinos,12-17a,2024,1022
+Andinos,12-17a,2025,935
+Andinos,18-29a,2019,288
+Andinos,18-29a,2020,157
+Andinos,18-29a,2021,168
+Andinos,18-29a,2022,212
+Andinos,18-29a,2023,424
+Andinos,18-29a,2024,554
+Andinos,18-29a,2025,498
+Andinos,30-59a,2019,369
+Andinos,30-59a,2020,227
+Andinos,30-59a,2021,263
+Andinos,30-59a,2022,327
+Andinos,30-59a,2023,674
+Andinos,30-59a,2024,859
+Andinos,30-59a,2025,828
+Andinos,60a >,2019,317
+Andinos,60a >,2020,228
+Andinos,60a >,2021,223
+Andinos,60a >,2022,310
+Andinos,60a >,2023,690
+Andinos,60a >,2024,839
+Andinos,60a >,2025,770"
+
+# 2. LIMPIEZA
+data_raw_and <- read.csv(text = csv_data_and)
+orden_etapas <- c("< 01m", "01-11m", "01-05a", "06-11a", "12-17a", "18-29a", "30-59a", "60a >")
+
+data_andinos <- data_raw_and %>%
+  mutate(Etapa = factor(Etapa, levels = orden_etapas)) %>%
+  complete(Etapa, Anio, fill = list(Atenciones = 0, Grupo = "Andinos")) %>%
+  arrange(Anio, Etapa)
+
+max_x_and <- max(data_andinos$Atenciones) * 1.1
+
+# 3. GRÁFICO ANDINOS
+plot_ly(
+  data = data_andinos,
+  x = ~Atenciones,
+  y = ~Etapa,
+  frame = ~Anio,
+  type = 'bar',
+  orientation = 'h',
+  marker = list(color = "#ffc502"), 
+  text = ~format(Atenciones, big.mark = ","),
+  textposition = "auto",
+  showlegend = FALSE, # Sin leyenda
+  hovertemplate = "<b>%{y}</b><br>Atenciones: %{x:,.0f}<extra></extra>"
+) %>%
+  layout(
+    title = list(text = "", x = 0.05),
+    xaxis = list(title = "Número de Atenciones", range = c(0, max_x_and), zeroline = TRUE),
+    yaxis = list(title = ""),
+    margin = list(l = 80),
+    showlegend = FALSE,
+    updatemenus = list(list(
+      type = "buttons", showactive = FALSE, x = 0, y = 1.15,
+      buttons = list(
+        list(label = "▶ Reproducir", method = "animate", 
+             args = list(NULL, list(frame = list(duration = 800, redraw = TRUE), fromcurrent = TRUE))),
+        list(label = "|| Pausa", method = "animate", 
+             args = list(list(NULL), list(frame = list(duration = 0, redraw = FALSE), mode = "immediate")))
+      )
+    ))
+  ) %>%
+  animation_opts(frame = 800, easing = "cubic-out", redraw = TRUE) %>%
+  animation_slider(currentvalue = list(prefix = "Año: ")) %>% # CAMBIO DE ETIQUETA AQUÍ
+  config(displayModeBar = FALSE)
+```
+
+## Población Afroperuana: Anemia por curso de vida (2019-2025)
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-align: "center"
+#| fig-height: 5
+
+library(tidyverse)
+library(plotly)
+
+# 1. DATOS
+csv_data_afro <- "Grupo,Etapa,Anio,Atenciones
+Afroperuanos,01-11m,2019,17
+Afroperuanos,01-11m,2020,19
+Afroperuanos,01-11m,2021,13
+Afroperuanos,01-11m,2022,23
+Afroperuanos,01-11m,2023,2
+Afroperuanos,01-11m,2024,2
+Afroperuanos,01-11m,2025,13
+Afroperuanos,01-05a,2019,41
+Afroperuanos,01-05a,2020,34
+Afroperuanos,01-05a,2021,55
+Afroperuanos,01-05a,2022,51
+Afroperuanos,01-05a,2023,7
+Afroperuanos,01-05a,2024,8
+Afroperuanos,01-05a,2025,26
+Afroperuanos,06-11a,2019,5
+Afroperuanos,06-11a,2020,8
+Afroperuanos,06-11a,2021,4
+Afroperuanos,06-11a,2022,3
+Afroperuanos,06-11a,2023,1
+Afroperuanos,06-11a,2024,2
+Afroperuanos,06-11a,2025,8
+Afroperuanos,12-17a,2019,0
+Afroperuanos,12-17a,2020,6
+Afroperuanos,12-17a,2021,7
+Afroperuanos,12-17a,2022,3
+Afroperuanos,12-17a,2023,5
+Afroperuanos,12-17a,2024,5
+Afroperuanos,12-17a,2025,8
+Afroperuanos,18-29a,2019,7
+Afroperuanos,18-29a,2020,4
+Afroperuanos,18-29a,2021,5
+Afroperuanos,18-29a,2022,7
+Afroperuanos,18-29a,2023,9
+Afroperuanos,18-29a,2024,5
+Afroperuanos,18-29a,2025,2
+Afroperuanos,30-59a,2019,18
+Afroperuanos,30-59a,2020,5
+Afroperuanos,30-59a,2021,8
+Afroperuanos,30-59a,2022,11
+Afroperuanos,30-59a,2023,17
+Afroperuanos,30-59a,2024,8
+Afroperuanos,30-59a,2025,25
+Afroperuanos,60a >,2019,9
+Afroperuanos,60a >,2020,5
+Afroperuanos,60a >,2021,19
+Afroperuanos,60a >,2022,14
+Afroperuanos,60a >,2023,11
+Afroperuanos,60a >,2024,3
+Afroperuanos,60a >,2025,19"
+
+# 2. LIMPIEZA
+data_raw_afro <- read.csv(text = csv_data_afro)
+orden_etapas <- c("< 01m", "01-11m", "01-05a", "06-11a", "12-17a", "18-29a", "30-59a", "60a >")
+
+data_afroperuanos <- data_raw_afro %>%
+  mutate(Etapa = factor(Etapa, levels = orden_etapas)) %>%
+  complete(Etapa, Anio, fill = list(Atenciones = 0, Grupo = "Afroperuanos")) %>%
+  arrange(Anio, Etapa)
+
+max_x_afro <- max(data_afroperuanos$Atenciones) * 1.1
+
+# 3. GRÁFICO AFROPERUANOS
+plot_ly(
+  data = data_afroperuanos,
+  x = ~Atenciones,
+  y = ~Etapa,
+  frame = ~Anio,
+  type = 'bar',
+  orientation = 'h',
+  marker = list(color = "#9b96e4"), 
+  text = ~format(Atenciones, big.mark = ","),
+  textposition = "auto",
+  showlegend = FALSE, # Sin leyenda
+  hovertemplate = "<b>%{y}</b><br>Atenciones: %{x:,.0f}<extra></extra>"
+) %>%
+  layout(
+    title = list(text = "<b>Población Afroperuana: Anemia por curso de vida</b>", x = 0.05),
+    xaxis = list(title = "Número de Atenciones", range = c(0, max_x_afro), zeroline = TRUE),
+    yaxis = list(title = ""),
+    margin = list(l = 80),
+    showlegend = FALSE,
+    updatemenus = list(list(
+      type = "buttons", showactive = FALSE, x = 0, y = 1.15,
+      buttons = list(
+        list(label = "▶ Reproducir", method = "animate", 
+             args = list(NULL, list(frame = list(duration = 800, redraw = TRUE), fromcurrent = TRUE))),
+        list(label = "|| Pausa", method = "animate", 
+             args = list(list(NULL), list(frame = list(duration = 0, redraw = FALSE), mode = "immediate")))
+      )
+    ))
+  ) %>%
+  animation_opts(frame = 800, easing = "cubic-out", redraw = TRUE) %>%
+  animation_slider(currentvalue = list(prefix = "Año: ")) %>% # CAMBIO DE ETIQUETA AQUÍ
+  config(displayModeBar = FALSE)
+```
+
+## Data Fuente
+```{r}
+csv_data <- "Grupo,Etapa,Anio,Atenciones
+Amazónicos,< 01m,2019,38
+Amazónicos,< 01m,2020,14
+Amazónicos,< 01m,2021,29
+Amazónicos,< 01m,2022,21
+Amazónicos,< 01m,2023,12
+Amazónicos,< 01m,2024,7
+Amazónicos,< 01m,2025,9
+Amazónicos,01-11m,2019,6526
+Amazónicos,01-11m,2020,4111
+Amazónicos,01-11m,2021,4986
+Amazónicos,01-11m,2022,5827
+Amazónicos,01-11m,2023,4591
+Amazónicos,01-11m,2024,4411
+Amazónicos,01-11m,2025,2007
+Amazónicos,01-05a,2019,19543
+Amazónicos,01-05a,2020,11308
+Amazónicos,01-05a,2021,11915
+Amazónicos,01-05a,2022,14070
+Amazónicos,01-05a,2023,12410
+Amazónicos,01-05a,2024,11065
+Amazónicos,01-05a,2025,6516
+Amazónicos,06-11a,2019,3038
+Amazónicos,06-11a,2020,2656
+Amazónicos,06-11a,2021,2662
+Amazónicos,06-11a,2022,3576
+Amazónicos,06-11a,2023,3309
+Amazónicos,06-11a,2024,3512
+Amazónicos,06-11a,2025,2788
+Amazónicos,12-17a,2019,1446
+Amazónicos,12-17a,2020,1182
+Amazónicos,12-17a,2021,1320
+Amazónicos,12-17a,2022,2123
+Amazónicos,12-17a,2023,2036
+Amazónicos,12-17a,2024,2300
+Amazónicos,12-17a,2025,2092
+Amazónicos,18-29a,2019,1384
+Amazónicos,18-29a,2020,1237
+Amazónicos,18-29a,2021,1553
+Amazónicos,18-29a,2022,2027
+Amazónicos,18-29a,2023,1887
+Amazónicos,18-29a,2024,1863
+Amazónicos,18-29a,2025,1624
+Amazónicos,30-59a,2019,2084
+Amazónicos,30-59a,2020,1925
+Amazónicos,30-59a,2021,2551
+Amazónicos,30-59a,2022,3249
+Amazónicos,30-59a,2023,2979
+Amazónicos,30-59a,2024,3123
+Amazónicos,30-59a,2025,2656
+Amazónicos,60a >,2019,771
+Amazónicos,60a >,2020,697
+Amazónicos,60a >,2021,918
+Amazónicos,60a >,2022,1304
+Amazónicos,60a >,2023,1418
+Amazónicos,60a >,2024,1665
+Amazónicos,60a >,2025,1495
+Andinos,< 01m,2019,6
+Andinos,< 01m,2020,1
+Andinos,< 01m,2021,1
+Andinos,< 01m,2022,1
+Andinos,< 01m,2023,1
+Andinos,< 01m,2024,2
+Andinos,< 01m,2025,0
+Andinos,01-11m,2019,1727
+Andinos,01-11m,2020,1259
+Andinos,01-11m,2021,1089
+Andinos,01-11m,2022,1138
+Andinos,01-11m,2023,1109
+Andinos,01-11m,2024,839
+Andinos,01-11m,2025,395
+Andinos,01-05a,2019,5970
+Andinos,01-05a,2020,3408
+Andinos,01-05a,2021,3805
+Andinos,01-05a,2022,3679
+Andinos,01-05a,2023,4632
+Andinos,01-05a,2024,4316
+Andinos,01-05a,2025,2269
+Andinos,06-11a,2019,957
+Andinos,06-11a,2020,475
+Andinos,06-11a,2021,516
+Andinos,06-11a,2022,663
+Andinos,06-11a,2023,940
+Andinos,06-11a,2024,1005
+Andinos,06-11a,2025,501
+Andinos,12-17a,2019,454
+Andinos,12-17a,2020,232
+Andinos,12-17a,2021,228
+Andinos,12-17a,2022,415
+Andinos,12-17a,2023,769
+Andinos,12-17a,2024,1022
+Andinos,12-17a,2025,935
+Andinos,18-29a,2019,288
+Andinos,18-29a,2020,157
+Andinos,18-29a,2021,168
+Andinos,18-29a,2022,212
+Andinos,18-29a,2023,424
+Andinos,18-29a,2024,554
+Andinos,18-29a,2025,498
+Andinos,30-59a,2019,369
+Andinos,30-59a,2020,227
+Andinos,30-59a,2021,263
+Andinos,30-59a,2022,327
+Andinos,30-59a,2023,674
+Andinos,30-59a,2024,859
+Andinos,30-59a,2025,828
+Andinos,60a >,2019,317
+Andinos,60a >,2020,228
+Andinos,60a >,2021,223
+Andinos,60a >,2022,310
+Andinos,60a >,2023,690
+Andinos,60a >,2024,839
+Andinos,60a >,2025,770
+Afroperuanos,01-11m,2019,17
+Afroperuanos,01-11m,2020,19
+Afroperuanos,01-11m,2021,13
+Afroperuanos,01-11m,2022,23
+Afroperuanos,01-11m,2023,2
+Afroperuanos,01-11m,2024,2
+Afroperuanos,01-11m,2025,13
+Afroperuanos,01-05a,2019,41
+Afroperuanos,01-05a,2020,34
+Afroperuanos,01-05a,2021,55
+Afroperuanos,01-05a,2022,51
+Afroperuanos,01-05a,2023,7
+Afroperuanos,01-05a,2024,8
+Afroperuanos,01-05a,2025,26
+Afroperuanos,06-11a,2019,5
+Afroperuanos,06-11a,2020,8
+Afroperuanos,06-11a,2021,4
+Afroperuanos,06-11a,2022,3
+Afroperuanos,06-11a,2023,1
+Afroperuanos,06-11a,2024,2
+Afroperuanos,06-11a,2025,8
+Afroperuanos,12-17a,2019,0
+Afroperuanos,12-17a,2020,6
+Afroperuanos,12-17a,2021,7
+Afroperuanos,12-17a,2022,3
+Afroperuanos,12-17a,2023,5
+Afroperuanos,12-17a,2024,5
+Afroperuanos,12-17a,2025,8
+Afroperuanos,18-29a,2019,7
+Afroperuanos,18-29a,2020,4
+Afroperuanos,18-29a,2021,5
+Afroperuanos,18-29a,2022,7
+Afroperuanos,18-29a,2023,9
+Afroperuanos,18-29a,2024,5
+Afroperuanos,18-29a,2025,2
+Afroperuanos,30-59a,2019,18
+Afroperuanos,30-59a,2020,5
+Afroperuanos,30-59a,2021,8
+Afroperuanos,30-59a,2022,11
+Afroperuanos,30-59a,2023,17
+Afroperuanos,30-59a,2024,8
+Afroperuanos,30-59a,2025,25
+Afroperuanos,60a >,2019,9
+Afroperuanos,60a >,2020,5
+Afroperuanos,60a >,2021,19
+Afroperuanos,60a >,2022,14
+Afroperuanos,60a >,2023,11
+Afroperuanos,60a >,2024,3
+Afroperuanos,60a >,2025,19"
+
+data_raw <- read.csv(text = csv_data)
+
+# 2. LIMPIEZA
+# Orden lógico de las etapas de vida
+orden_etapas <- c("< 01m", "01-11m", "01-05a", "06-11a", 
+                  "12-17a", "18-29a", "30-59a", "60a >")
+
+data_clean <- data_raw %>%
+  mutate(
+    # Convertir Etapa a factor ordenado (rev para que el menor salga arriba en gráfico)
+    Etapa = factor(Etapa, levels = rev(orden_etapas)),
+    # Rellenar cualquier hueco con 0 para evitar errores de animación
+    Atenciones = as.integer(Atenciones)
+  ) %>%
+  # Esto es crucial: asegura que todos los años tengan todas las etapas/grupos
+  complete(Grupo, Etapa, Anio, fill = list(Atenciones = 0))
+
+make_download_table(data_clean, filename_label = "data_clean")
+
+```
+
+:::
+
+## **Anemia nutricional en poblaciones andinas departamentos 2019-2023**
+
+Se encuentran mayores registros de casos de anemia nutricional de la población andina en los departamentos de Ayacucho, Ancash y Huancavelica, registran más del 70% del total de casos en esta población desde el 2019 al 2022. En tanto que el 2023, Ancash, Ayacucho, Huancavelica y Cusco suman el 84% de los casos totales en poblaciones andinas.
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-align: "center"
+
+# Asegúrate de tener instalados: 
+# install.packages("reactablefmtr")
+# install.packages("scales")
+
+library(tidyverse)
+library(reactable)
+library(reactablefmtr)
+library(htmltools)
+library(scales)
+
+# 1. DATOS (Extraídos del JSON de Flourish)
+csv_data <- "Departamento,2019,2020,2021,2022,2023,2024,2025,Pct_2019,Pct_2020,Pct_2021,Pct_2022,Pct_2023,Pct_2024,Pct_2025
+Amazonas,15,2,2,8,6,5,6,0.15,0.03,0.03,0.12,0.06,0.1,0.1
+Ancash,2866,1998,2201,2399,3805,3971,1499,28.41,33.37,34.98,35.57,41.18,42.1,24.2
+Apurímac,51,27,61,95,43,164,269,0.51,0.45,0.97,1.41,0.47,1.7,4.3
+Arequipa,19,8,16,25,27,33,19,0.19,0.13,0.25,0.37,0.29,0.3,0.3
+Ayacucho,4015,1848,1808,1981,1594,1350,1056,39.8,30.87,28.73,29.37,17.25,14.3,17.0
+Cajamarca,22,9,3,16,36,23,24,0.22,0.15,0.05,0.24,0.39,0.2,0.4
+Callao,21,5,5,11,10,10,6,0.21,0.08,0.08,0.16,0.11,0.1,0.1
+Cusco,751,634,599,497,1571,916,356,7.44,10.59,9.52,7.37,17.0,9.7,5.7
+Huancavelica,1072,681,685,811,1195,1912,1530,10.63,11.37,10.89,12.02,12.93,20.3,24.7
+Huánuco,18,11,23,13,30,109,138,0.18,0.18,0.37,0.19,0.32,1.2,2.2
+Ica,44,8,19,26,13,10,11,0.44,0.13,0.3,0.39,0.14,0.1,0.2
+Junín,10,2,8,12,16,53,145,0.1,0.03,0.13,0.18,0.17,0.6,2.3
+La Libertad,3,2,8,6,13,9,6,0.03,0.03,0.13,0.09,0.14,0.1,0.1
+Lambayeque,5,7,33,20,10,272,727,0.05,0.12,0.52,0.3,0.11,2.9,11.7
+Lima DIRIS Centro,27,19,13,42,41,42,28,0.27,0.32,0.21,0.62,0.44,0.4,0.5
+Lima DIRIS Este,47,17,17,22,38,26,19,0.47,0.28,0.27,0.33,0.41,0.3,0.3
+Lima DIRIS Norte,42,19,22,45,53,55,48,0.42,0.32,0.35,0.67,0.57,0.6,0.8
+Lima DIRIS Sur,49,20,28,44,34,22,32,0.49,0.33,0.44,0.65,0.37,0.2,0.5
+Lima Provincias,27,0,10,15,19,17,13,0.27,0.0,0.16,0.22,0.21,0.2,0.2
+Loreto,33,37,26,21,18,26,61,0.33,0.62,0.41,0.31,0.19,0.3,1.0
+Madre De Dios,1,8,6,6,16,15,11,0.01,0.13,0.1,0.09,0.17,0.2,0.2
+Moquegua,11,8,8,7,13,16,10,0.11,0.13,0.13,0.1,0.14,0.2,0.2
+Pasco,8,5,7,4,5,2,3,0.08,0.08,0.11,0.06,0.05,0.0,0.0
+Piura,3,2,1,9,7,5,1,0.03,0.03,0.02,0.13,0.08,0.1,0.0
+Puno,861,584,629,555,562,268,129,8.53,9.75,10.0,8.23,6.08,2.8,2.1
+San Martín,1,2,2,2,11,4,4,0.01,0.03,0.03,0.03,0.12,0.0,0.1
+Tacna,32,8,6,17,21,65,30,0.32,0.13,0.1,0.25,0.23,0.7,0.5
+Tumbes,5,2,2,1,2,0,0,0.05,0.03,0.03,0.01,0.02,0.0,0.0
+Ucayali,29,14,45,35,30,36,15,0.29,0.23,0.72,0.52,0.32,0.4,0.2"
+
+data_final <- read.csv(text = csv_data)
+
+# Seleccionamos solo las columnas de conteo para la tabla principal
+data_table <- data_final %>%
+  select(Departamento, `X2019`, `X2020`, `X2021`, `X2022`, `X2023`, `X2024`, `X2025`)
+
+# Renombramos para quitar la "X" automática de R
+colnames(data_table) <- c("Departamento", "2019", "2020", "2021", "2022", "2023", "2024", "2025")
+
+# 3. CREACIÓN DE LA TABLA ESTILO FLOURISH
+reactable(
+  data_table,
+  pagination = FALSE,
+  highlight = TRUE,
+  striped = TRUE,
+  compact = TRUE,
+  searchable = TRUE,
+  defaultSorted = "2019",
+  defaultSortOrder = "desc",
+  
+  theme = reactableTheme(
+    style = list(fontFamily = "Roboto, Arial, sans-serif", fontSize = "13px"),
+    headerStyle = list(
+      backgroundColor = "#ffffff",
+      borderBottom = "2px solid #0622ac", 
+      textTransform = "uppercase",
+      fontWeight = "bold",
+      color = "#333"
+    )
+  ),
+  
+  columns = list(
+    Departamento = colDef(
+      minWidth = 140,
+      style = list(fontWeight = "bold", borderRight = "1px solid #eee"),
+      sticky = "left"
+    ),
+    # AQUÍ ESTÁ LA CORRECCIÓN: number_fmt = scales::comma
+    `2019` = colDef(cell = data_bars(data_table, fill_color = "#ffd84d", text_position = "outside-end", number_fmt = scales::comma)),
+    `2020` = colDef(cell = data_bars(data_table, fill_color = "#cbadf0", text_position = "outside-end", number_fmt = scales::comma)),
+    `2021` = colDef(cell = data_bars(data_table, fill_color = "#eddea4", text_position = "outside-end", number_fmt = scales::comma)),
+    `2022` = colDef(cell = data_bars(data_table, fill_color = "#88e99a", text_position = "outside-end", number_fmt = scales::comma)),
+    `2023` = colDef(cell = data_bars(data_table, fill_color = "#9bf3f8", text_position = "outside-end", number_fmt = scales::comma)),
+    `2024` = colDef(cell = data_bars(data_table, fill_color = "#ffb1c1", text_position = "outside-end", number_fmt = scales::comma)),
+    `2025` = colDef(cell = data_bars(data_table, fill_color = "#8cd3f7", text_position = "outside-end", number_fmt = scales::comma))
+  )
+) %>%
+  div(style = "font-family: 'Roboto', sans-serif; max-width: 950px; margin: 0 auto;") %>%
+  tagList(
+    h3("Anemia nutricional en poblaciones andinas atendidas por departamentos 2019-2025", 
+       style = "color: #090d81; font-weight: bold; margin-bottom: 10px;"),
+    .,
+    div(
+      style = "font-size: 11px; color: #666; margin-top: 10px; border-top: 1px solid #ccc; padding-top: 5px;",
+      p("Fuente: HIS MINSA | Elaboración: Centro Nacional de Investigación Social e Interculturalidad en Salud")
+    )
+  )
+```
+
+## **Anemia nutricional en poblaciones amazónicas por departamentos 2019-2025**
+Loreto, Amazonas y Ucayali son las regiones que encabezan los registros de anemia nutricional en la población amazónica, desde el 2019 hasta el 2023, variando  entre el 78% y 83%.
+
+En los registros por departamentos, el 2019, Loreto y Piura tienen mayores registros de casos; el 2020, 2021 y 2022, es Piura el departamento que figura con más casos. El 2023 figuran más atenciones representando el 35%.
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-align: "center"
+
+# Asegúrate de tener instalados: 
+# install.packages("reactablefmtr")
+# install.packages("scales")
+
+library(tidyverse)
+library(reactable)
+library(reactablefmtr)
+library(htmltools)
+library(scales)
+
+# 1. DATOS AMAZÓNICOS (Extraídos del JSON de Flourish)
+csv_data <- "Departamento,2019,2020,2021,2022,2023,2024,2025
+Amazonas,9866,6110,6132,7837,6188,5478,2077
+Ancash,14,14,3,13,14,9,4
+Apurimac,19,16,28,12,9,8,4
+Arequipa,7,8,8,5,9,7,9
+Ayacucho,15,8,14,25,24,34,25
+Cajamarca,145,53,86,107,60,50,50
+Callao,7,3,0,5,1,5,14
+Cusco,1610,1340,1791,1579,1357,1195,429
+Huancavelica,2,2,4,8,32,25,8
+Huánuco,121,92,95,111,133,180,82
+Ica,6,5,4,8,7,2,6
+Junín,2715,1803,2046,2072,2088,2081,1667
+La Libertad,8,1,12,15,23,29,13
+Lambayeque,43,18,16,18,40,32,19
+Lima DIRIS Centro,30,22,5,34,28,25,31
+Lima DIRIS Este,21,5,6,20,25,16,11
+Lima DIRIS Norte,15,8,7,14,19,29,34
+Lima DIRIS Sur,16,6,12,17,5,19,10
+Lima Provincias,11,5,1,11,26,8,2
+Loreto,13350,9542,10868,15908,12872,13553,10254
+Madre De Dios,499,361,259,236,410,290,269
+Moquegua,0,0,0,0,0,2,0
+Pasco,823,549,686,597,313,308,202
+Piura,20,10,5,11,7,12,13
+Puno,15,2,3,9,15,4,5
+San Martín,391,464,519,465,1027,1174,624
+Tacna,3,0,1,2,1,3,3
+Tumbes,18,2,3,0,4,1,3
+Ucayali,5040,2681,3320,3058,3905,3367,3319"
+
+data_table <- read.csv(text = csv_data)
+
+# Renombramos columnas para quitar la "X" automática de R al leer CSV
+colnames(data_table) <- c("Departamento", "2019", "2020", "2021", "2022", "2023", "2024", "2025")
+
+# 2. CREACIÓN DE LA TABLA ESTILO FLOURISH (AMAZÓNICOS)
+reactable(
+  data_table,
+  pagination = FALSE,
+  highlight = TRUE,
+  striped = TRUE,
+  compact = TRUE,
+  searchable = TRUE,
+  defaultSorted = "2019",
+  defaultSortOrder = "desc",
+  
+  theme = reactableTheme(
+    style = list(fontFamily = "Roboto, Arial, sans-serif", fontSize = "13px"),
+    headerStyle = list(
+      backgroundColor = "#ffffff",
+      borderBottom = "2px solid #0622ac", 
+      textTransform = "uppercase",
+      fontWeight = "bold",
+      color = "#333"
+    )
+  ),
+  
+  columns = list(
+    Departamento = colDef(
+      minWidth = 140,
+      style = list(fontWeight = "bold", borderRight = "1px solid #eee"),
+      sticky = "left"
+    ),
+    # Barras de datos con la paleta rosa/morada de Flourish
+    # number_fmt = scales::comma agrega las comas de miles
+    `2019` = colDef(cell = data_bars(data_table, fill_color = "#e667b1", text_position = "outside-end", number_fmt = scales::comma)),
+    `2020` = colDef(cell = data_bars(data_table, fill_color = "#a193f3", text_position = "outside-end", number_fmt = scales::comma)),
+    `2021` = colDef(cell = data_bars(data_table, fill_color = "#eb8484", text_position = "outside-end", number_fmt = scales::comma)),
+    `2022` = colDef(cell = data_bars(data_table, fill_color = "#4bedf3", text_position = "outside-end", number_fmt = scales::comma)),
+    `2023` = colDef(cell = data_bars(data_table, fill_color = "#d6a4e9", text_position = "outside-end", number_fmt = scales::comma)),
+    `2024` = colDef(cell = data_bars(data_table, fill_color = "#48ffa7", text_position = "outside-end", number_fmt = scales::comma)),
+    `2025` = colDef(cell = data_bars(data_table, fill_color = "#ffb1c1", text_position = "outside-end", number_fmt = scales::comma))
+  )
+) %>%
+  div(style = "font-family: 'Roboto', sans-serif; max-width: 950px; margin: 0 auto;") %>%
+  tagList(
+    h3("Anemia nutricional en poblaciones amazónicas por departamentos 2019-2025", 
+       style = "color: #090d81; font-weight: bold; margin-bottom: 10px;"),
+    .,
+    div(
+      style = "font-size: 11px; color: #666; margin-top: 10px; border-top: 1px solid #ccc; padding-top: 5px;",
+      p("Fuente: HIS MINSA | Elaboración: Centro Nacional de Investigación Social e Interculturalidad en Salud")
+    )
+  )
+```
+
+## **Anemia nutricional en población afroperuana por curso de vida 2019-2025**
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-align: "center"
+
+library(tidyverse)
+library(reactable)
+library(reactablefmtr)
+library(htmltools)
+library(scales)
+
+# 1. DATOS AFROPERUANOS
+csv_data <- "Departamento,2019,2020,2021,2022,2023,2024,2025
+Amazonas,0,0,0,0,2,0,2
+Ancash,1,0,1,1,0,0,0
+Apurímac,6,14,3,1,0,1,0
+Arequipa,4,0,5,10,0,2,6
+Ayacucho,0,0,0,1,0,1,3
+Cajamarca,6,1,1,1,1,2,2
+Callao,0,0,0,1,1,1,0
+Cusco,1,1,0,0,3,3,6
+Huánuco,1,2,3,2,2,0,1
+Ica,14,3,5,3,6,5,57
+Junín,1,0,0,2,0,1,1
+La Libertad,1,0,0,2,1,0,1
+Lambayeque,0,4,4,26,7,0,1
+Lima DIRIS Centro,0,0,0,0,1,2,3
+Lima DIRIS Este,0,0,0,0,0,0,1
+Lima DIRIS Norte,1,0,0,1,0,0,1
+Lima DIRIS  Sur,0,0,1,0,0,0,0
+Lima Provincias,0,0,0,0,3,0,0
+Loreto,29,25,8,9,7,2,3
+Moquegua,2,0,0,0,0,1,0
+Pasco,3,4,0,0,0,0,0
+Piura,23,27,80,52,18,11,15
+Puno,3,0,0,0,0,1,0
+Tumbes,1,0,0,0,0,0,3
+Ucayali,0,0,0,0,0,2,0"
+
+data_table <- read.csv(text = csv_data)
+colnames(data_table) <- c("Departamento", "2019", "2020", "2021", "2022", "2023", "2024", "2025")
+
+# 2. CREACIÓN DE LA TABLA ESTILO FLOURISH (AFROPERUANOS)
+reactable(
+  data_table,
+  pagination = FALSE,
+  highlight = TRUE,
+  striped = TRUE,
+  compact = TRUE,
+  searchable = TRUE,
+  defaultSorted = "2019",
+  defaultSortOrder = "desc",
+  
+  theme = reactableTheme(
+    style = list(fontFamily = "Roboto, Arial, sans-serif", fontSize = "13px"),
+    headerStyle = list(
+      backgroundColor = "#ffffff",
+      borderBottom = "2px solid #0622ac", 
+      textTransform = "uppercase",
+      fontWeight = "bold",
+      color = "#333"
+    )
+  ),
+  
+  columns = list(
+    Departamento = colDef(
+      minWidth = 140,
+      style = list(fontWeight = "bold", borderRight = "1px solid #eee"),
+      sticky = "left"
+    ),
+    # Barras de datos con la paleta verdosa de Flourish para Afroperuanos
+    `2019` = colDef(cell = data_bars(data_table, fill_color = "#e667b1", text_position = "outside-end", number_fmt = scales::comma)),
+    `2020` = colDef(cell = data_bars(data_table, fill_color = "#a193f3", text_position = "outside-end", number_fmt = scales::comma)),
+    `2021` = colDef(cell = data_bars(data_table, fill_color = "#eb8484", text_position = "outside-end", number_fmt = scales::comma)),
+    `2022` = colDef(cell = data_bars(data_table, fill_color = "#4bedf3", text_position = "outside-end", number_fmt = scales::comma)),
+    `2023` = colDef(cell = data_bars(data_table, fill_color = "#d6a4e9", text_position = "outside-end", number_fmt = scales::comma)),
+    `2024` = colDef(cell = data_bars(data_table, fill_color = "#48ffa7", text_position = "outside-end", number_fmt = scales::comma)),
+    `2025` = colDef(cell = data_bars(data_table, fill_color = "#ffb1c1", text_position = "outside-end", number_fmt = scales::comma))
+  )
+) %>%
+  div(style = "font-family: 'Roboto', sans-serif; max-width: 950px; margin: 0 auto;") %>%
+  tagList(
+    h3("Anemia nutricional en población afroperuana por departamentos 2019-2025", 
+       style = "color: #090d81; font-weight: bold; margin-bottom: 10px;"),
+    .,
+    div(
+      style = "font-size: 11px; color: #666; margin-top: 10px; border-top: 1px solid #ccc; padding-top: 5px;",
+      p("Fuente: HIS MINSA | Elaboración: Centro Nacional de Investigación Social e Interculturalidad en Salud")
+    )
+  )
+```
+
