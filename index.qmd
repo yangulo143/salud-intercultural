@@ -28,14 +28,14 @@ Encontrará contenido sobre algunas enfermedades que afectan a los pueblos de la
 :::
 
 ::: {.g-col-6}
-### 🩺 [VIH](VIH.html)
+### 🩺 [VIH en las poblaciones amazónicas, andinas y afroperuanas](VIH.html)
 **Fecha:** Diciembre 2025
 **Datos:** HISS MINSA 
 :::
 
 ::: {.g-col-6}
-### 💫 [Anemia nutricional](anemia.html)
-**Fecha:** Diciembre 2025
+### 💫 [Anemia nutricional en la población afroperuana y en etnias andinas y amazónicas](anemia.html)
+**Fecha:** Marzo 2024
 **Datos:** HISS MINSA
 
 :::

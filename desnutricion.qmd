@@ -255,8 +255,325 @@ Durante el periodo analizado, 2019 al 2021, las etnias con más registros de cas
 
 :::
 
+## **Desnutrición en poblaciones amazónicas 2019-2021**
 
-## **Desnutrición en poblaciones amazónicas por departamentos 2019-2021**
+::: panel-tabset
+## Piramide por grupo etario y año.
+
+La categoría que prima más en los registros de casos es *retardo del desarrollo debido a desnutrición proteicocalórica*, el 2019 con 17 087 casos; el 2020, 8 303 y el 2021, 5 863 casos. En segundo lugar, es la categoría Desnutrición proteicocalórica de grado moderado y leve, el 2019 con 3 175 casos; el 2020, 1 421 y el 2021, 1 219 casos.
+
+```{r}
+
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-height: 10 
+#| fig-width: 9
+
+library(tidyverse)
+library(plotly)
+library(scales)
+
+# 1. DATOS 
+data_desnutricion_sexo <- tribble(
+  ~Categoria, ~Año, ~M, ~F,
+  "Kwashiorkor", 2019, 7, 17,
+  "Kwashiorkor", 2020, 4, 1,
+  "Kwashiorkor", 2021, 1, 2,
+  "Marasmo nutricional", 2019, 14, 27,
+  "Marasmo nutricional", 2020, 6, 8,
+  "Marasmo nutricional", 2021, 1, 5,
+  "Desnutrición proteicocalórica severa, no especificada", 2019, 221, 283,
+  "Desnutrición proteicocalórica severa, no especificada", 2020, 121, 107,
+  "Desnutrición proteicocalórica severa, no especificada", 2021, 79, 84,
+  "Desnutrición proteicocalórica de grado moderado y leve", 2019, 1325, 1850,
+  "Desnutrición proteicocalórica de grado moderado y leve", 2020, 636, 785,
+  "Desnutrición proteicocalórica de grado moderado y leve", 2021, 590, 629,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", 2019, 8192, 8895,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", 2020, 4009, 4294,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", 2021, 2774, 3089,
+  "Desnutrición proteicocalórica, no especificada", 2019, 272, 380,
+  "Desnutrición proteicocalórica, no especificada", 2020, 58, 97,
+  "Desnutrición proteicocalórica, no especificada", 2021, 86, 133,
+  "Total", 2019, 10031, 11452,
+  "Total", 2020, 4834, 5292,
+  "Total", 2021, 3531, 3942
+)
+
+# 2. PROCESAMIENTO
+# Calculamos el valor máximo global para centrar el eje
+max_valor <- max(c(data_desnutricion_sexo$M, data_desnutricion_sexo$F), na.rm = TRUE)
+# Le damos un 10% de margen extra para que no quede pegado
+limite_eje <- max_valor * 1.1
+
+plot_data <- data_desnutricion_sexo %>%
+  pivot_longer(cols = c("M", "F"), names_to = "Sexo", values_to = "Casos") %>%
+  mutate(
+    Casos_Plot = ifelse(Sexo == "M", -Casos, Casos),
+    Año = factor(Año, levels = c(2021, 2020, 2019)),
+    Categoria = factor(Categoria, levels = unique(data_desnutricion_sexo$Categoria)),
+    
+    Tooltip_Text = paste0(
+      "<b>", Categoria, "</b><br>",
+      "Año: ", Año, "<br>",
+      "Sexo: ", ifelse(Sexo == "M", "Masculino", "Femenino"), "<br>",
+      "Casos: ", format(Casos, big.mark = " ")
+    )
+  )
+
+color_male <- "#61dcb6"   
+color_female <- "#ffff8d" 
+
+# 3. GRÁFICO BASE
+g_piramide_centrada <- ggplot(plot_data, aes(x = Año, y = Casos_Plot, fill = Sexo)) +
+  
+  geom_col(aes(text = Tooltip_Text), width = 0.85) +
+  
+  coord_flip() +
+  
+  facet_wrap(~Categoria, ncol = 1, scales = "free_x") + # Mantenemos free_x
+  
+  scale_fill_manual(values = c("M" = color_male, "F" = color_female), 
+                    labels = c("M" = "Hombres", "F" = "Mujeres")) +
+  
+  # --- LA MEJORA DE SIMETRÍA ---
+  # Aunque usamos 'free_x' arriba para que cada faceta tenga su propia escala,
+  # esto a veces descentra el 0 si la asimetría es grande.
+  # Para forzar la simetría visual perfecta, usamos 'labels' para corregir los números
+  # y expandimos el límite simétricamente.
+  scale_y_continuous(
+    labels = function(x) number(abs(x), big.mark = " "),
+    # n.breaks = 5 fuerza a que haya marcas legibles (ej: 4000, 2000, 0, 2000, 4000)
+    n.breaks = 5 
+  ) +
+  
+  labs(
+    title = "Desnutrición por sexo en poblaciones amazónicas",
+    x = "",
+    y = ""
+  ) +
+  
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    strip.text = element_text(face = "bold", size = 10, hjust = 0),
+    strip.background = element_rect(fill = "#f9f9f9", color = NA),
+    panel.grid.major.y = element_blank(),
+    legend.position = "bottom"
+  )
+
+# 4. CONVERSIÓN A INTERACTIVO CON AJUSTE FINO
+p <- ggplotly(g_piramide_centrada, tooltip = "text", height = 1000) %>%
+  layout(
+    legend = list(orientation = "h", xanchor = "center", x = 0.5, y = -0.05),
+    margin = list(t = 80, l = 50, b = 50)
+  )
+
+# --- TRUCO AVANZADO PARA CENTRAR EL CERO EN CADA FACETA ---
+# Plotly con 'scales="free"' a veces mueve el cero.
+# Este bucle recorre cada uno de los sub-gráficos (ejes X) y los fuerza a ser simétricos.
+# Si el rango original era [-200, 500], lo fuerza a ser [-500, 500].
+
+for(i in seq_along(p$x$layout)) {
+  if(grepl("xaxis", names(p$x$layout)[i])) {
+    # Obtenemos el rango actual que calculó ggplot automáticamente
+    current_range <- p$x$layout[[i]]$range
+    # Encontramos cuál es el valor absoluto más grande
+    max_abs <- max(abs(current_range))
+    # Forzamos el rango a ser simétrico: de -max a +max
+    p$x$layout[[i]]$range <- c(-max_abs, max_abs)
+  }
+}
+
+p
+```
+## Datos fuentes
+
+```{r}
+make_download_table(data_desnutricion_sexo, "data_desnutricion_sexo")
+```
+
+:::
+
+
+::: panel-tabset
+## Tendencia por grupo etario y año.
+
+Afecta más a los niños de 1 a 5 años, el 2019 represento el 69% del total de casos, el 2020, el 73% y el 2021, el 59%. Es seguido por los niños de 1 a 11 meses.
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+
+# 1. DATOS COMPLETOS (Transcritos de la imagen)
+data_curso_vida_full <- tribble(
+  ~Categoria, ~Edad, ~`2019`, ~`2020`, ~`2021`,
+  
+  # Kwashiorkor
+  "Kwashiorkor", "01-11m", 6, 2, 0,
+  "Kwashiorkor", "01-05a", 17, 1, 0,
+  "Kwashiorkor", "18-29a", 0, 1, 2,
+  "Kwashiorkor", "30-59a", 0, 1, 1,
+  "Kwashiorkor", "60a >", 1, 0, 0,
+  
+  # Marasmo nutricional
+  "Marasmo nutricional", "01-11m", 5, 0, 2,
+  "Marasmo nutricional", "01-05a", 34, 13, 2,
+  "Marasmo nutricional", "06-11a", 2, 0, 0,
+  "Marasmo nutricional", "18-29a", 0, 1, 2,
+  
+  # Desnutrición proteicocalórica severa, no especificada
+  "Desnutrición proteicocalórica severa, no especificada", "< 01m", 15, 4, 2,
+  "Desnutrición proteicocalórica severa, no especificada", "01-11m", 67, 49, 39,
+  "Desnutrición proteicocalórica severa, no especificada", "01-05a", 278, 154, 98,
+  "Desnutrición proteicocalórica severa, no especificada", "06-11a", 114, 10, 12,
+  "Desnutrición proteicocalórica severa, no especificada", "12-17a", 15, 2, 7,
+  "Desnutrición proteicocalórica severa, no especificada", "18-29a", 4, 1, 1,
+  "Desnutrición proteicocalórica severa, no especificada", "30-59a", 4, 4, 1,
+  "Desnutrición proteicocalórica severa, no especificada", "60a >", 7, 4, 3,
+  
+  # Desnutrición proteicocalórica de grado moderado y leve
+  "Desnutrición proteicocalórica de grado moderado y leve", "< 01m", 56, 23, 30,
+  "Desnutrición proteicocalórica de grado moderado y leve", "01-11m", 785, 323, 280,
+  "Desnutrición proteicocalórica de grado moderado y leve", "01-05a", 1785, 802, 641,
+  "Desnutrición proteicocalórica de grado moderado y leve", "06-11a", 123, 74, 78,
+  "Desnutrición proteicocalórica de grado moderado y leve", "12-17a", 165, 43, 86,
+  "Desnutrición proteicocalórica de grado moderado y leve", "18-29a", 69, 32, 21,
+  "Desnutrición proteicocalórica de grado moderado y leve", "30-59a", 77, 38, 29,
+  "Desnutrición proteicocalórica de grado moderado y leve", "60a >", 115, 86, 54,
+  
+  # Retardo del desarrollo debido a desnutrición proteicocalórica
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", "< 01m", 66, 32, 39,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", "01-11m", 2245, 1124, 1030,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", "01-05a", 12661, 6376, 3676,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", "06-11a", 976, 423, 369,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", "12-17a", 1060, 312, 619,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", "18-29a", 45, 27, 122,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", "30-59a", 14, 5, 4,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", "60a >", 20, 4, 4,
+  
+  # Total desnutrición
+  "Total desnutrición", "< 01m", 139, 59, 72,
+  "Total desnutrición", "01-11m", 3128, 1509, 1360,
+  "Total desnutrición", "01-05a", 14845, 7371, 4431,
+  "Total desnutrición", "06-11a", 1228, 516, 463,
+  "Total desnutrición", "12-17a", 1265, 361, 721,
+  "Total desnutrición", "18-29a", 154, 76, 154,
+  "Total desnutrición", "30-59a", 164, 68, 84,
+  "Total desnutrición", "60a >", 560, 166, 188
+)
+
+# 2. FUNCIÓN DE BARRAS HTML
+bar_chart <- function(label, width_percent, color) {
+  bar <- div(
+    style = list(
+      background = color, 
+      width = width_percent, 
+      height = "14px", 
+      display = "inline-block",
+      marginRight = "8px"
+    )
+  )
+  div(
+    style = list(display = "flex", alignItems = "center"),
+    bar,
+    span(style = list(fontSize = "13px", color = "#333"), label)
+  )
+}
+
+# 3. TABLA REACTABLE
+reactable(
+  data_curso_vida_full,
+  groupBy = "Categoria", 
+  pagination = FALSE,    
+  defaultExpanded = TRUE, 
+  
+  theme = reactableTheme(
+    headerStyle = list(
+      borderBottom = "2px solid #333",
+      textTransform = "uppercase",
+      fontSize = "12px",
+      color = "#555"
+    ),
+    rowStyle = list(
+      borderBottom = "1px solid #eee",
+      fontSize = "13px"
+    ),
+    groupHeaderStyle = list(
+      backgroundColor = "#f9f9f9",
+      fontWeight = "bold",
+      fontSize = "14px"
+    )
+  ),
+  
+  columns = list(
+    Categoria = colDef(minWidth = 200),
+    Edad = colDef(
+      minWidth = 80,
+      align = "right",
+      style = list(fontWeight = "bold", color = "#555", borderRight = "1px solid #eee")
+    ),
+    
+    `2019` = colDef(
+      name = "2019",
+      align = "left",
+      cell = function(value) {
+        # Usamos el máximo global de la columna para que las barras sean comparables visualmente en toda la columna
+        max_val <- max(data_curso_vida_full$`2019`, na.rm = TRUE)
+        width <- paste0((value / max_val) * 100, "%")
+        bar_chart(value, width, "#66c2a5") 
+      },
+      minWidth = 150
+    ),
+    
+    `2020` = colDef(
+      name = "2020",
+      align = "left",
+      cell = function(value) {
+        max_val <- max(data_curso_vida_full$`2020`, na.rm = TRUE)
+        width <- paste0((value / max_val) * 100, "%")
+        bar_chart(value, width, "#ffffb3") 
+      },
+      minWidth = 150
+    ),
+    
+    `2021` = colDef(
+      name = "2021",
+      align = "left",
+      cell = function(value) {
+        max_val <- max(data_curso_vida_full$`2021`, na.rm = TRUE)
+        width <- paste0((value / max_val) * 100, "%")
+        bar_chart(value, width, "#fdb462") 
+      },
+      minWidth = 150
+    )
+  )
+) %>%
+  htmlwidgets::prependContent(
+    div(
+      h3("Desnutrición por curso de vida en poblaciones amazónicas 2019-2021", 
+         style = "font-family: Arial; font-weight: bold; margin-bottom: 5px;"),
+      div(
+        style = "margin-bottom: 15px; font-family: Arial; font-size: 12px;",
+        span(style = "background: #66c2a5; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"), "2019",
+        span(style = "margin-left: 10px; background: #ffffb3; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"), "2020",
+        span(style = "margin-left: 10px; background: #fdb462; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"), "2021"
+      )
+    )
+  )
+```
+
+## Datos fuentes
+```{r}
+make_download_table(data_curso_vida_full, "data_desnutricion_curso")
+```
+
+:::
 
 ::: panel-tabset
 ## Tabla dinámica
@@ -368,7 +685,332 @@ El 2019 y 2020 aparecen en este orden las regiones con mayores registros: Amazon
 :::
 
 
-## **Desnutrición en poblaciones andinas por departamentos 2019-2021**
+## **Desnutrición en poblaciones andinas 2019-2021**
+
+::: panel-tabset
+## Piramide por grupo etario y año.
+Desde el 2019 al 2021, la categoría más registrada en la población andina fue *retardo del desarrollo debido a desnutrición proteicocalórica* con 9 733 casos: durante el 2020, 4 547 y en el 2021, 4 390 casos. En segundo lugar, la categoría *desnutrición proteicocalórica, no especificada*. En el 2019 con 3 968 casos; en el 2020, 1 467; y en el 2021, 1 685 casos.
+
+La diferencia del número de casos entre hombres y mujeres, es mínima.  Las mujeres, el 2019 registraron el 53%, el 2020, 50%  y el 2021, 52% .
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-height: 10 
+#| fig-width: 9
+
+library(tidyverse)
+library(plotly)
+library(scales)
+
+# 1. DATOS (Transcritos de la imagen Poblaciones Andinas)
+data_desnutricion_andina <- tribble(
+  ~Categoria, ~Año, ~M, ~F,
+  "Kwashiorkor", 2019, 3, 0,
+  "Kwashiorkor", 2020, 0, 1,
+  "Kwashiorkor", 2021, 2, 3,
+  
+  "Marasmo nutricional", 2019, 3, 5,
+  "Marasmo nutricional", 2020, 1, 0,
+  "Marasmo nutricional", 2021, 0, 0,
+  
+  "Desnutrición proteicocalórica severa, no especificada", 2019, 51, 78,
+  "Desnutrición proteicocalórica severa, no especificada", 2020, 21, 34,
+  "Desnutrición proteicocalórica severa, no especificada", 2021, 29, 22,
+  
+  "Desnutrición proteicocalórica de grado moderado y leve", 2019, 660, 722,
+  "Desnutrición proteicocalórica de grado moderado y leve", 2020, 357, 328,
+  "Desnutrición proteicocalórica de grado moderado y leve", 2021, 500, 435,
+  
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", 2019, 4869, 4864,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", 2020, 2356, 2191,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", 2021, 2194, 2196,
+  
+  "Desnutrición proteicocalórica, no especificada", 2019, 1517, 2451,
+  "Desnutrición proteicocalórica, no especificada", 2020, 610, 857,
+  "Desnutrición proteicocalórica, no especificada", 2021, 633, 1052,
+  
+  "Total", 2019, 7103, 8120,
+  "Total", 2020, 3345, 3411,
+  "Total", 2021, 3358, 3708
+)
+
+# 2. PROCESAMIENTO
+plot_data_andina <- data_desnutricion_andina %>%
+  pivot_longer(cols = c("M", "F"), names_to = "Sexo", values_to = "Casos") %>%
+  mutate(
+    # Hombres a la izquierda (negativo)
+    Casos_Plot = ifelse(Sexo == "M", -Casos, Casos),
+    
+    Año = factor(Año, levels = c(2021, 2020, 2019)),
+    Categoria = factor(Categoria, levels = unique(data_desnutricion_andina$Categoria)),
+    
+    Tooltip_Text = paste0(
+      "<b>", Categoria, "</b><br>",
+      "Año: ", Año, "<br>",
+      "Sexo: ", ifelse(Sexo == "M", "Masculino", "Femenino"), "<br>",
+      "Casos: ", format(Casos, big.mark = " ")
+    )
+  )
+
+# COLORES ADAPTADOS A LA IMAGEN ANDINA
+color_male <- "#61dcb6"   # Turquesa (Igual)
+color_female <- "#a4de6c" # Verde Lima (Nuevo, según imagen)
+
+# 3. GRÁFICO BASE
+g_piramide_andina <- ggplot(plot_data_andina, aes(x = Año, y = Casos_Plot, fill = Sexo)) +
+  
+  geom_col(aes(text = Tooltip_Text), width = 0.85) +
+  coord_flip() +
+  facet_wrap(~Categoria, ncol = 1, scales = "free_x") +
+  
+  scale_fill_manual(values = c("M" = color_male, "F" = color_female), 
+                    labels = c("M" = "M", "F" = "F")) + # Etiquetas cortas como en la foto
+  
+  scale_y_continuous(
+    labels = function(x) number(abs(x), big.mark = " "),
+    n.breaks = 5 
+  ) +
+  
+  labs(
+    title = "Desnutrición por sexo en poblaciones andinas 2019-2021",
+    x = "",
+    y = ""
+  ) +
+  
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    strip.text = element_text(face = "bold", size = 10, hjust = 0),
+    strip.background = element_rect(fill = "#f9f9f9", color = NA),
+    panel.grid.major.y = element_blank(),
+    legend.position = "bottom"
+  )
+
+# 4. INTERACTIVIDAD
+p_andina <- ggplotly(g_piramide_andina, tooltip = "text", height = 1000) %>%
+  layout(
+    legend = list(
+      orientation = "h",
+      xanchor = "center", x = 0.5, y = -0.05),
+    margin = list(t = 80, l = 50, b = 50)
+  )
+
+# 5. AJUSTE DE SIMETRÍA (Cero centrado perfecto)
+for(i in seq_along(p_andina$x$layout)) {
+  if(grepl("xaxis", names(p_andina$x$layout)[i])) {
+    current_range <- p_andina$x$layout[[i]]$range
+    max_abs <- max(abs(current_range))
+    p_andina$x$layout[[i]]$range <- c(-max_abs, max_abs)
+  }
+}
+
+p_andina
+
+```
+
+## Datos fuentes
+```{r}
+make_download_table(data_desnutricion_andina, "data_desnutricion_andina")
+```
+
+:::
+
+::: panel-tabset
+## Tendencia por grupo etario y año.
+La desnutrición afecta principalmente a tres grupos de edades. Primero a los niños de 1 a 5 años, alcanzó al 31% del total de casos del 2019, el 43% del total de casos del 2020 y 36% del 2021. Es seguido por los adultos mayores con 30%, el 2019; 24%, el 2020 y 26%, el 2021. Continúan los adolescentes, 21%, el 2019; 13%, el 2020 y 17%, el 2021.
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+
+# 1. DATOS COMPLETOS (Transcritos de la imagen Poblaciones Andinas)
+data_etapa_andina <- tribble(
+  ~Categoria, ~Edad, ~`2019`, ~`2020`, ~`2021`,
+  
+  # Kwashiorkor
+  "Kwashiorkor", "01-11m", 1, 0, 0,
+  "Kwashiorkor", "01-05a", 1, 0, 1,
+  "Kwashiorkor", "18-29a", 0, 0, 1,
+  "Kwashiorkor", "30-59a", 0, 0, 1,
+  "Kwashiorkor", "60a >", 1, 1, 2,
+  
+  # Marasmo nutricional
+  "Marasmo nutricional", "01-11m", 4, 0, 0,
+  "Marasmo nutricional", "01-05a", 3, 0, 0,
+  "Marasmo nutricional", "30-59a", 0, 1, 0,
+  "Marasmo nutricional", "60a >", 1, 0, 0,
+  
+  # Desnutrición proteicocalórica severa, no especificada
+  "Desnutrición proteicocalórica severa, no especificada", "01-11m", 15, 5, 7,
+  "Desnutrición proteicocalórica severa, no especificada", "01-05a", 33, 23, 21,
+  "Desnutrición proteicocalórica severa, no especificada", "06-11a", 19, 3, 4,
+  "Desnutrición proteicocalórica severa, no especificada", "12-17a", 1, 2, 2,
+  "Desnutrición proteicocalórica severa, no especificada", "18-29a", 2, 1, 2,
+  "Desnutrición proteicocalórica severa, no especificada", "30-59a", 4, 0, 0,
+  "Desnutrición proteicocalórica severa, no especificada", "60a >", 55, 21, 15,
+  
+  # Desnutrición proteicocalórica de grado moderado y leve
+  "Desnutrición proteicocalórica de grado moderado y leve", "< 01m", 9, 31, 21,
+  "Desnutrición proteicocalórica de grado moderado y leve", "01-11m", 136, 119, 172,
+  "Desnutrición proteicocalórica de grado moderado y leve", "01-05a", 349, 241, 363,
+  "Desnutrición proteicocalórica de grado moderado y leve", "06-11a", 53, 26, 32,
+  "Desnutrición proteicocalórica de grado moderado y leve", "12-17a", 116, 36, 46,
+  "Desnutrición proteicocalórica de grado moderado y leve", "18-29a", 21, 6, 8,
+  "Desnutrición proteicocalórica de grado moderado y leve", "30-59a", 39, 12, 31,
+  "Desnutrición proteicocalórica de grado moderado y leve", "60a >", 659, 214, 262,
+  
+  # Retardo del desarrollo debido a desnutrición proteicocalórica
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", "< 01m", 14, 13, 10,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", "01-11m", 750, 453, 464,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", "01-05a", 4365, 2613, 2157,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", "06-11a", 1377, 520, 557,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", "12-17a", 3039, 850, 1122,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", "18-29a", 62, 19, 24,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", "30-59a", 9, 6, 9,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", "60a >", 117, 73, 47,
+  
+  # Desnutrición proteicocalórica, no especificada
+  "Desnutrición proteicocalórica, no especificada", "< 01m", 6, 0, 0,
+  "Desnutrición proteicocalórica, no especificada", "01-11m", 11, 3, 4,
+  "Desnutrición proteicocalórica, no especificada", "01-05a", 23, 9, 10,
+  "Desnutrición proteicocalórica, no especificada", "06-11a", 35, 5, 12,
+  "Desnutrición proteicocalórica, no especificada", "12-17a", 36, 11, 18,
+  "Desnutrición proteicocalórica, no especificada", "18-29a", 52, 46, 45,
+  "Desnutrición proteicocalórica, no especificada", "30-59a", 145, 63, 77,
+  "Desnutrición proteicocalórica, no especificada", "60a >", 3660, 1330, 1519,
+  
+  # Total casos Desnutrición
+  "Total casos Desnutrición", "< 01m", 29, 44, 31,
+  "Total casos Desnutrición", "01-11m", 917, 580, 647,
+  "Total casos Desnutrición", "01-05a", 4774, 2886, 2552,
+  "Total casos Desnutrición", "06-11a", 1484, 554, 605,
+  "Total casos Desnutrición", "12-17a", 3192, 899, 1188,
+  "Total casos Desnutrición", "18-29a", 137, 72, 80,
+  "Total casos Desnutrición", "30-59a", 197, 82, 118,
+  "Total casos Desnutrición", "60a >", 4493, 1639, 1845
+)
+
+# 2. FUNCIÓN DE BARRAS (Igual que antes)
+bar_chart <- function(label, width_percent, color) {
+  bar <- div(
+    style = list(
+      background = color, 
+      width = width_percent, 
+      height = "14px", 
+      display = "inline-block",
+      marginRight = "8px"
+    )
+  )
+  div(
+    style = list(display = "flex", alignItems = "center"),
+    bar,
+    span(style = list(fontSize = "13px", color = "#333"), label)
+  )
+}
+
+# 3. COLORES DE LA NUEVA IMAGEN
+# 2019: Dorado/Mostaza | 2020: Amarillo pálido | 2021: Verde Oliva
+c_2019 <- "#cfc457"
+c_2020 <- "#fcfda4" # Le doy un toque de borde o contraste sutil es difícil en web, usaremos un amarillo muy claro
+c_2021 <- "#99b31d"
+
+# 4. TABLA REACTABLE
+reactable(
+  data_etapa_andina,
+  groupBy = "Categoria", 
+  pagination = FALSE,    
+  defaultExpanded = TRUE, 
+  
+  theme = reactableTheme(
+    headerStyle = list(
+      borderBottom = "2px solid #333",
+      textTransform = "uppercase",
+      fontSize = "12px",
+      color = "#555",
+      textAlign = "left" # Alineación Izquierda solicitada
+    ),
+    rowStyle = list(
+      borderBottom = "1px solid #eee",
+      fontSize = "13px"
+    ),
+    groupHeaderStyle = list(
+      backgroundColor = "#f9f9f9",
+      fontWeight = "bold",
+      fontSize = "14px"
+    )
+  ),
+  
+  columns = list(
+    Categoria = colDef(minWidth = 200),
+    
+    Edad = colDef(
+      minWidth = 80,
+      align = "right",
+      style = list(fontWeight = "bold", color = "#555", borderRight = "1px solid #eee")
+    ),
+    
+    `2019` = colDef(
+      name = "2019",
+      align = "left", 
+      cell = function(value) {
+        max_val <- max(data_etapa_andina$`2019`, na.rm = TRUE)
+        width <- paste0((value / max_val) * 100, "%")
+        bar_chart(value, width, c_2019) 
+      },
+      minWidth = 150
+    ),
+    
+    `2020` = colDef(
+      name = "2020",
+      align = "left",
+      cell = function(value) {
+        max_val <- max(data_etapa_andina$`2020`, na.rm = TRUE)
+        width <- paste0((value / max_val) * 100, "%")
+        bar_chart(value, width, c_2020) 
+      },
+      minWidth = 150
+    ),
+    
+    `2021` = colDef(
+      name = "2021",
+      align = "left",
+      cell = function(value) {
+        max_val <- max(data_etapa_andina$`2021`, na.rm = TRUE)
+        width <- paste0((value / max_val) * 100, "%")
+        bar_chart(value, width, c_2021) 
+      },
+      minWidth = 150
+    )
+  )
+) %>%
+  htmlwidgets::prependContent(
+    div(
+      h3("Desnutrición por etapa de vida en poblaciones andinas 2019-2021", 
+         style = "font-family: Arial; font-weight: bold; margin-bottom: 5px;"),
+      div(
+        style = "margin-bottom: 15px; font-family: Arial; font-size: 12px;",
+        span(style = paste0("background: ", c_2019, "; width: 10px; height: 10px; display: inline-block; margin-right: 5px;")), "2019",
+        span(style = paste0("margin-left: 10px; background: ", c_2020, "; width: 10px; height: 10px; display: inline-block; margin-right: 5px;")), "2020",
+        span(style = paste0("margin-left: 10px; background: ", c_2021, "; width: 10px; height: 10px; display: inline-block; margin-right: 5px;")), "2021"
+      )
+    )
+  )
+
+```
+
+## Datos fuentes
+```{r}
+make_download_table(data_etapa_andina, "data_desnutricion_etapa")
+```
+
+:::
 
 ::: panel-tabset
 ## Tabla dinámica
@@ -480,6 +1122,293 @@ En todo el periodo analizado son estas las regiones con mayores registros de cas
 :::
 
 ## **Desnutrición en población afroperuana por departamentos 2019-2021**
+
+
+::: panel-tabset
+
+## Piramide por grupo etario y año.
+La categoría más frecuente de desnutrición de la población afroperuana es Retardo del desarrollo debido a desnutrición proteicocalórica, el 2019 con 50 casos; el 2020, con 48 casos y el 2021 con 69 casos. Los casos registrados en hombres son ligeramente superiores al de las mujeres en el 2020 y 2021.
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-height: 10 
+#| fig-width: 9
+
+library(tidyverse)
+library(plotly)
+library(scales)
+
+# 1. DATOS TRANSCRITOS (Imagen: Sexo Afroperuana)
+data_sexo_afro <- tribble(
+  ~Categoria, ~Año, ~M, ~F,
+  
+  "Desnutrición proteicocalórica severa, no especificada", 2019, 1, 2,
+  "Desnutrición proteicocalórica severa, no especificada", 2020, 11, 8,
+  "Desnutrición proteicocalórica severa, no especificada", 2021, 2, 1,
+  
+  "Desnutrición proteicocalórica de grado moderado y leve", 2019, 8, 4,
+  "Desnutrición proteicocalórica de grado moderado y leve", 2020, 26, 22,
+  "Desnutrición proteicocalórica de grado moderado y leve", 2021, 29, 14,
+  
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", 2019, 30, 20,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", 2020, 1, 4,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", 2021, 37, 32,
+  
+  "Desnutrición proteicocalórica, no especificada", 2019, 3, 3,
+  "Desnutrición proteicocalórica, no especificada", 2020, 39, 35,
+  "Desnutrición proteicocalórica, no especificada", 2021, 1, 1,
+  
+  "Total", 2019, 42, 29,
+  "Total", 2020, 77, 69,
+  "Total", 2021, 69, 48
+)
+
+# 2. PROCESAMIENTO
+plot_data_afro <- data_sexo_afro %>%
+  pivot_longer(cols = c("M", "F"), names_to = "Sexo", values_to = "Casos") %>%
+  mutate(
+    Casos_Plot = ifelse(Sexo == "M", -Casos, Casos),
+    Año = factor(Año, levels = c(2021, 2020, 2019)),
+    Categoria = factor(Categoria, levels = unique(data_sexo_afro$Categoria)),
+    
+    Tooltip_Text = paste0(
+      "<b>", Categoria, "</b><br>",
+      "Año: ", Año, "<br>",
+      "Sexo: ", ifelse(Sexo == "M", "Masculino", "Femenino"), "<br>",
+      "Casos: ", format(Casos, big.mark = " ")
+    )
+  )
+
+# COLORES AFROPERUANA (Turquesa y Amarillo)
+color_male_afro <- "#61dcb6"   
+color_female_afro <- "#ffeb3b" # Amarillo intenso (como en la foto)
+
+# 3. GRÁFICO BASE
+g_piramide_afro <- ggplot(plot_data_afro, aes(x = Año, y = Casos_Plot, fill = Sexo)) +
+  
+  geom_col(aes(text = Tooltip_Text), width = 0.85) +
+  coord_flip() +
+  facet_wrap(~Categoria, ncol = 1, scales = "free_x") +
+  
+  scale_fill_manual(values = c("M" = color_male_afro, "F" = color_female_afro), 
+                    labels = c("M" = "M", "F" = "F")) +
+  
+  scale_y_continuous(
+    labels = function(x) number(abs(x), big.mark = " "),
+    n.breaks = 5 
+  ) +
+  
+  labs(
+    title = "Desnutrición por sexo en población afroperuana 2019-2021",
+    x = "",
+    y = ""
+  ) +
+  
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    strip.text = element_text(face = "bold", size = 10, hjust = 0),
+    strip.background = element_rect(fill = "#f9f9f9", color = NA),
+    panel.grid.major.y = element_blank(),
+    legend.position = "bottom"
+  )
+
+# 4. INTERACTIVIDAD
+p_afro <- ggplotly(g_piramide_afro, tooltip = "text", height = 1000) %>%
+  layout(
+    legend = list(
+      orientation = "h",
+      xanchor = "center", x = 0.5, y = -0.05),
+    margin = list(t = 80, l = 50, b = 50)
+  )
+
+# 5. AJUSTE DE SIMETRÍA (Cero centrado)
+for(i in seq_along(p_afro$x$layout)) {
+  if(grepl("xaxis", names(p_afro$x$layout)[i])) {
+    current_range <- p_afro$x$layout[[i]]$range
+    max_abs <- max(abs(current_range))
+    p_afro$x$layout[[i]]$range <- c(-max_abs, max_abs)
+  }
+}
+
+p_afro
+
+```
+## Datos fuentes
+```{r}
+make_download_table(data_sexo_afro, "data_desnutricion_sexo_afro")
+```
+
+:::
+::: panel-tabset
+## Tendencia por grupo etario y año.
+El 2019 aparecen más registros de casos en niños de 6 a 11 años con 37 casos. El 2020 y 2021, se observa más casos en niños de 1 a 5 años con 38 y 98 casos, respectivamente.
+```{r}
+
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+
+# 1. DATOS TRANSCRITOS (Imagen: Curso de vida Afroperuana)
+data_curso_afro <- tribble(
+  ~Categoria, ~Edad, ~`2019`, ~`2020`, ~`2021`,
+  
+  # Severa
+  "Desnutrición proteicocalórica severa, no especificada", "01-11m", 0, 1, 0,
+  "Desnutrición proteicocalórica severa, no especificada", "01-05a", 1, 1, 2,
+  "Desnutrición proteicocalórica severa, no especificada", "06-11a", 1, 0, 0,
+  "Desnutrición proteicocalórica severa, no especificada", "60a >", 1, 0, 1,
+  
+  # Moderada y Leve
+  "Desnutrición proteicocalórica de grado moderado y leve", "01-11m", 2, 12, 3,
+  "Desnutrición proteicocalórica de grado moderado y leve", "01-05a", 5, 7, 36,
+  "Desnutrición proteicocalórica de grado moderado y leve", "06-11a", 3, 0, 0,
+  "Desnutrición proteicocalórica de grado moderado y leve", "12-17a", 0, 0, 3,
+  "Desnutrición proteicocalórica de grado moderado y leve", "60a >", 2, 0, 1,
+  
+  # Retardo del desarrollo
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", "01-11m", 5, 16, 6,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", "01-05a", 31, 29, 60,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", "06-11a", 2, 0, 0,
+  "Retardo del desarrollo debido a desnutrición proteicocalórica", "12-17a", 12, 3, 3,
+  
+  # No especificada
+  "Desnutrición proteicocalórica, no especificada", "01-05a", 0, 1, 0,
+  "Desnutrición proteicocalórica, no especificada", "06-11a", 0, 1, 0,
+  "Desnutrición proteicocalórica, no especificada", "18-29a", 0, 1, 0,
+  "Desnutrición proteicocalórica, no especificada", "30-59a", 1, 1, 0,
+  "Desnutrición proteicocalórica, no especificada", "60a >", 5, 1, 2,
+  
+  # Total
+  "Total Desnutrición", "01-11m", 0, 29, 9,
+  "Total Desnutrición", "01-05a", 7, 38, 98,
+  "Total Desnutrición", "06-11a", 37, 1, 0,
+  "Total Desnutrición", "12-17a", 6, 3, 6,
+  "Total Desnutrición", "18-29a", 12, 1, 0,
+  "Total Desnutrición", "30-59a", 1, 1, 0,
+  "Total Desnutrición", "60a >", 8, 1, 4
+)
+
+# 2. COLORES ESPECÍFICOS DE ESTA IMAGEN
+c_2019_afro <- "#ffeb3b" # Amarillo brillante
+c_2020_afro <- "#ffb74d" # Naranja
+c_2021_afro <- "#61dcb6" # Verde Turquesa
+
+# 3. FUNCIÓN DE BARRAS
+bar_chart <- function(label, width_percent, color) {
+  # Si el valor es 0, mostramos el número pero sin barra o barra mínima
+  width_style <- if(label == 0) "0px" else width_percent
+  
+  bar <- div(
+    style = list(
+      background = color, 
+      width = width_style, 
+      height = "14px", 
+      display = "inline-block",
+      marginRight = "8px"
+    )
+  )
+  div(
+    style = list(display = "flex", alignItems = "center"),
+    bar,
+    span(style = list(fontSize = "13px", color = "#333"), label)
+  )
+}
+
+# 4. TABLA REACTABLE
+reactable(
+  data_curso_afro,
+  groupBy = "Categoria", 
+  pagination = FALSE,    
+  defaultExpanded = TRUE, 
+  
+  theme = reactableTheme(
+    headerStyle = list(
+      borderBottom = "2px solid #333",
+      textTransform = "uppercase",
+      fontSize = "12px",
+      color = "#555",
+      textAlign = "left"
+    ),
+    rowStyle = list(
+      borderBottom = "1px solid #eee",
+      fontSize = "13px"
+    ),
+    groupHeaderStyle = list(
+      backgroundColor = "#f9f9f9",
+      fontWeight = "bold",
+      fontSize = "14px"
+    )
+  ),
+  
+  columns = list(
+    Categoria = colDef(minWidth = 200),
+    Edad = colDef(
+      minWidth = 80,
+      align = "right",
+      style = list(fontWeight = "bold", color = "#555", borderRight = "1px solid #eee")
+    ),
+    
+    `2019` = colDef(
+      name = "2019",
+      align = "left",
+      cell = function(value) {
+        max_val <- max(data_curso_afro$`2019`, na.rm = TRUE)
+        width <- paste0((value / max_val) * 100, "%")
+        bar_chart(value, width, c_2019_afro) 
+      },
+      minWidth = 150
+    ),
+    
+    `2020` = colDef(
+      name = "2020",
+      align = "left",
+      cell = function(value) {
+        max_val <- max(data_curso_afro$`2020`, na.rm = TRUE)
+        width <- paste0((value / max_val) * 100, "%")
+        bar_chart(value, width, c_2020_afro) 
+      },
+      minWidth = 150
+    ),
+    
+    `2021` = colDef(
+      name = "2021",
+      align = "left",
+      cell = function(value) {
+        max_val <- max(data_curso_afro$`2021`, na.rm = TRUE)
+        width <- paste0((value / max_val) * 100, "%")
+        bar_chart(value, width, c_2021_afro) 
+      },
+      minWidth = 150
+    )
+  )
+) %>%
+  htmlwidgets::prependContent(
+    div(
+      h3("Desnutrición por curso de vida en población afroperuana 2019-2021", 
+         style = "font-family: Arial; font-weight: bold; margin-bottom: 5px;"),
+      div(
+        style = "margin-bottom: 15px; font-family: Arial; font-size: 12px;",
+        span(style = paste0("background: ", c_2019_afro, "; width: 10px; height: 10px; display: inline-block; margin-right: 5px;")), "2019",
+        span(style = paste0("margin-left: 10px; background: ", c_2020_afro, "; width: 10px; height: 10px; display: inline-block; margin-right: 5px;")), "2020",
+        span(style = paste0("margin-left: 10px; background: ", c_2021_afro, "; width: 10px; height: 10px; display: inline-block; margin-right: 5px;")), "2021"
+      )
+    )
+  )
+```
+## Datos fuentes
+```{r}
+make_download_table(data_curso_afro, "data_desnutricion_curso_afro")
+```
+
+
+:::
 
 ::: panel-tabset
 

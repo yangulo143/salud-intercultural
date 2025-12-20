@@ -1,0 +1,1360 @@
+---
+title: "VIH en las poblaciones amazónicas, andinas y afroperuanas"
+subtitle: "Análisis de datos del Ministerio de Salud (MINSA)"
+date: last-modified
+author: "Subdirección de Medicina Tradicional, Interculturalidad e Investigación Social (SUMEC-CENSI)"
+format: 
+  html:
+    theme: cosmo
+    toc: true
+    page-layout: full
+    code-fold: true
+execute:
+  warning: false
+  message: false
+footer: "Fuente de datos: Sistema HISS-MINSA | Fecha de corte: 03/2024"
+---
+
+El sida es la otra pandemia que afecta a la población mundial y aunque las personas con VIH reciben tratamiento y unido a la calidad de vida se detiene el avance de la enfermedad, sin embargo, sigue cobrando la vida de miles de personas.
+
+El 15 de junio del 2021 se cumplieron 40 años de la primera descripción clínica de los casos a lo que más adelante tomo el nombre del Síndrome de Inmunodeficiencia Adquirida (SIDA).
+
+Según información del Ministerio de Salud en nuestro país, el 2022, hay aproximadamente 70 000 personas afectadas con VIH.
+
+A continuación, se presenta información desagregada por poblaciones indígenas amazónicas y andinas y la población afroperuana desde el 2019 hasta el 2023. Esta información proviene de la data del HIS Ministerio de Salud.
+
+Según el CIE 10, Clasificación Estadística Internacional de Enfermedades y Problemas Relacionados con la Salud, elaborado por la Organización Mundial de la Salud, se considera estas categorías en el VIH:
+
+-   Enfermedad por Virus de la Inmunodeficiencia Humana \[VIH\], resultante en enfermedades ­infecciosas y parasitarias.
+
+-   Enfermedad por Virus de la Inmunodeficiencia Humana \[VIH\], resultante en tumores malignos.
+
+-   Enfermedad por Virus de la Inmunodeficiencia Humana \[VIH\], resultante en otras enfermedades especificadas.
+
+-   Enfermedad por Virus de la Inmunodeficiencia Humana \[VIH\], resultante en otras afecciones.
+
+-   Enfermedad por Virus de la Inmunodeficiencia Humana \[VIH\], sin otra especificación.
+
+## **VIH por etnicidad**
+
+Los mayores registros de VIH se dieron en los mestizos. Seguido por los amazónicos, andinos y la población afroperuana. Se observa la disminución en los registros de VIH el 2020 hasta el 2021, esto es por la disminución de la detección de casos por la pandemia del COVID-19.
+
+::: panel-tabset
+## Gráfico
+
+```{r}
+
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(plotly)
+library(scales)
+library(DT)
+
+# --- FUNCIÓN AUXILIAR PARA TABLAS DE DESCARGA ---
+# Esta función crea estandariza el botón de Excel para todos los gráficos
+make_download_table <- function(data_input, filename_label = "datos") {
+  datatable(
+    data_input,
+    extensions = 'Buttons',
+    rownames = FALSE,
+    options = list(
+      dom = 'Bfrtip',
+      buttons = list(
+        list(extend = 'excel', filename = filename_label, title = filename_label),
+        list(extend = 'csv', filename = filename_label)
+      ),
+      pageLength = 5, # Pocas filas para no ocupar mucho espacio
+      scrollX = TRUE,
+      language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')
+    )
+  )
+}
+
+# 1. DATOS TRANSCRITOS (Imagen Excel)
+# Nota: Los guiones "-" los he interpretado como 0 para mantener la continuidad de la línea.
+data_tendencia_etnias <- tribble(
+  ~Año, ~Afroperuano, ~Andinos, ~Amazónicos, ~Mestizo,
+  2019, 0, 31, 390, 26174,
+  2020, 4, 25, 352, 15060,
+  2021, 0, 34, 627, 19045,
+  2022, 3, 49, 719, 25727,
+  2023, 0, 66, 848, 29802,
+  2024, 2, 49, 727, 29968,
+  2025, 0, 53, 555, 20141
+)
+
+# 2. PROCESAMIENTO
+plot_data_final <- data_tendencia_etnias %>%
+  pivot_longer(
+    cols = c("Afroperuano", "Andinos", "Amazónicos", "Mestizo"), 
+    names_to = "Etnia", 
+    values_to = "Casos"
+  ) %>%
+  mutate(
+    # Tooltip personalizado para ver los datos claros al pasar el mouse
+    Tooltip_Text = paste0(
+      "<b>", Etnia, "</b><br>",
+      "Año: ", Año, "<br>",
+      "Casos: ", format(Casos, big.mark = ",")
+    )
+  )
+
+# 3. GRÁFICO DE LÍNEAS CON ESCALAS LIBRES
+g_tendencias_final <- ggplot(plot_data_final, aes(x = Año, y = Casos, color = Etnia)) +
+  
+  # Líneas y Puntos
+  geom_line(linewidth = 1.1) +
+  geom_point(aes(text = Tooltip_Text), size = 2.5) +
+  
+  # --- CLAVE DEL ÉXITO VISUAL ---
+  # scales = "free_y": Permite que Mestizos llegue a 30k y Afroperuanos a 4
+  # sin que ninguno se vea aplastado.
+  facet_wrap(~Etnia, scales = "free_y", ncol = 2) +
+  
+  # Colores diferenciados
+  scale_color_brewer(palette = "Set1") +
+  
+  # Ajustes de Ejes
+  scale_x_continuous(breaks = 2019:2025) + # Forzamos que salgan todos los años
+  scale_y_continuous(labels = scales::comma, limits = c(0, NA)) + # Comas para miles y base 0
+  
+  labs(
+    title = "Tendencia de casos por etnia (2019-2025)",
+    subtitle = "Escalas independientes por grupo para visualizar evolución",
+    x = "",
+    y = "Número de Casos"
+  ) +
+  
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    strip.text = element_text(face = "bold", size = 11),
+    strip.background = element_rect(fill = "#f5f5f5", color = NA),
+    legend.position = "none", # No hace falta leyenda, el título de cada cuadro lo dice
+    panel.grid.minor = element_blank()
+  )
+
+# 4. INTERACTIVIDAD
+ggplotly(g_tendencias_final, tooltip = "text") %>%
+  layout(
+    margin = list(t = 60),
+    autosize = TRUE
+  )
+
+```
+
+## Datos Fuente
+
+```{r}
+make_download_table(data_tendencia_etnias, "data_tendencia_etnias")
+
+```
+:::
+
+:::panel-tabset
+
+## Grafico
+
+```{r}
+
+
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-height: 900 
+
+library(tidyverse)
+library(plotly)
+library(viridis)
+
+# 1. DATOS (Los mismos de la imagen panorámica)
+data_etnias_full <- tribble(
+  ~Etnia, ~`2019`, ~`2020`, ~`2021`, ~`2022`, ~`2023`, ~`2024`, ~`2025`,
+  "Achuar", 7, 5, 6, 11, 11, 30, 14,
+  "Afroperuano", 0, 4, 0, 3, 0, 2, 0,
+  "Aimara", 10, 10, 7, 6, 8, 4, 5,
+  "Amahuaca", 5, 13, 1, 7, 2, 1, 3,
+  "Arabela", 1, 8, 2, 1, 1, 0, 1,
+  "Ashaninka", 9, 10, 39, 83, 36, 76, 31,
+  "Asheninka", 0, 2, 7, 15, 14, 16, 8,
+  "Awajún", 262, 219, 434, 434, 155, 424, 281,
+  "Bora", 3, 2, 2, 2, 1, 1, 6,
+  "Capanahua", 0, 1, 1, 0, 0, 0, 0,
+  "Cashinahua", 1, 2, 0, 7, 3, 0, 1,
+  "Chapra", 0, 1, 0, 0, 0, 1, 3,
+  "Chitonahua", 0, 0, 0, 0, 0, 3, 4,
+  "Ese Eja", 0, 1, 0, 5, 2, 0, 0,
+  "Harakbut", 0, 1, 0, 1, 2, 0, 0,
+  "Iñapari", 0, 0, 0, 0, 0, 1, 2,
+  "Jaqaru", 1, 0, 0, 0, 0, 4, 2,
+  "Jíbaro", 0, 0, 0, 0, 0, 3, 1,
+  "Kakinte", 0, 0, 0, 0, 0, 0, 2,
+  "Kakataibo", 0, 5, 0, 0, 0, 1, 0,
+  "Kandozi", 2, 0, 3, 4, 1, 10, 5,
+  "Kichwa", 2, 19, 3, 9, 1, 60, 74,
+  "Kukama Kukamiria", 23, 1, 16, 20, 8, 12, 6,
+  "Madija", 6, 0, 8, 14, 2, 0, 1,
+  "Maijuna", 2, 0, 0, 0, 1, 0, 2,
+  "Matsés", 0, 0, 0, 0, 0, 1, 1,
+  "Matsigenka", 0, 0, 0, 2, 0, 0, 0,
+  "Murui-Muinani", 0, 2, 0, 4, 0, 2, 0,
+  "Nahua", 1, 1, 0, 1, 2, 0, 0,
+  "Nanti", 0, 0, 0, 0, 2, 0, 1,
+  "Nomatsigenga", 0, 0, 6, 0, 0, 0, 1,
+  "Quechuas", 15, 1, 1, 2, 0, 0, 1,
+  "Sharanahua", 26, 15, 0, 43, 23, 41, 46,
+  "Shawi", 0, 1, 0, 3, 0, 5, 1,
+  "Shipibo-Konibo", 6, 7, 27, 9, 2, 21, 24,
+  "Shiwilu", 0, 14, 3, 33, 20, 19, 25,
+  "Tikuna", 16, 0, 7, 1, 0, 4, 0,
+  "Urarina", 0, 0, 8, 0, 1, 1, 3,
+  "Wampis", 1, 0, 0, 0, 1, 1, 2,
+  "Yagua", 2, 1, 2, 36, 5, 25, 26,
+  "Yaminahua", 0, 2, 1, 5, 0, 1, 2,
+  "Yanesha", 0, 2, 74, 3, 0, 1, 0,
+  "Yine", 0, 0, 0, 1, 1, 6, 4
+)
+
+# 2. PROCESAMIENTO
+# Necesitamos formato largo para el Heatmap
+plot_data_heatmap <- data_etnias_full %>%
+  pivot_longer(cols = `2019`:`2025`, names_to = "Año_Texto", values_to = "Casos") %>%
+  mutate(
+    Año = as.numeric(Año_Texto),
+    # Calculamos el total por etnia para ordenar el gráfico (Las que tienen más casos, arriba)
+    Total_Por_Etnia = ave(Casos, Etnia, FUN = sum), 
+    # --- EL TRUCO PARA EL COLOR ---
+    # Creamos una columna específica para pintar.
+    # Si Casos es 0, ponemos NA (para que no se pinte).
+    # Si es > 0, mantenemos el número.
+    Casos_Fill = ifelse(Casos == 0, NA, Casos),
+    
+    # Tooltip: Usamos la columna original 'Casos' para que muestre "0" y no "NA"
+    Tooltip_Text = paste0("<b>", Etnia, "</b><br>",
+                          "Año: ", Año, "<br>",
+                          "Casos: ", Casos)
+  )
+# 3. GRÁFICO HEATMAP
+g_heatmap <- ggplot(plot_data_heatmap, aes(x = factor(Año), y = reorder(Etnia, Total_Por_Etnia))) +
+  
+  # Usamos Casos_Fill para el relleno (color), pero Tooltip_Text para el mouse
+  geom_tile(aes(fill = Casos_Fill, text = Tooltip_Text), color = "white", size = 0.2) +
+  
+  # ESCALA DE COLORES
+  # na.value = "#f5f5f5": Esto pinta los NA (nuestros ceros) de un gris muy suave
+  scale_fill_viridis_c(
+    option = "magma", 
+    direction = -1, 
+    name = "Casos",
+    na.value = "#f5f5f5" 
+  ) +
+  
+  scale_x_discrete(position = "top") + 
+  
+  labs(
+    title = "Mapa de Calor: Intensidad de casos por Etnia y Año",
+    subtitle = "El color aparece solo si hay al menos 1 caso registrado",
+    x = "",
+    y = ""
+  ) +
+  
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
+    plot.subtitle = element_text(size = 10, color = "gray40", margin = margin(b=10)),
+    axis.text.x = element_text(face = "bold"),
+    axis.text.y = element_text(size = 9),
+    panel.grid = element_blank(), 
+    legend.position = "right"
+  )
+# 4. INTERACTIVIDAD
+# Nota: Plotly por defecto hace los NA transparentes, lo cual funciona perfecto aquí.
+ggplotly(g_heatmap, tooltip = "text", height = 900) %>%
+  layout(
+    margin = list(l = 150, t = 100), 
+    xaxis = list(side = "top") 
+  )
+```
+
+## Datos Fuente
+
+```{r}
+make_download_table(data_etnias_full, "data_etnias_full")
+```
+::: 
+
+En comparación con las poblaciones afroperuana y andinas, en las poblaciones amazónicas se registran más casos de VIH y aunque el 2020 hubo una leve disminución de los registros en 10%, en comparación al 2019; el 2021, aun con la coyuntura de la pandemia por la Covid-19, tuvo un significativo incremento con respecto al año anterior en 78%.
+
+En la población andina y, especialmente, en la población afroperuana, se observa un bajo registro en la detección de casos. El 2023, en la población afroperuana, no se registró ninguna atención. Aún esta pendiente determinar los factores que limitan el uso de la variable étnica.
+
+
+
+## **VIH en los 55 pueblos indígenas u originarios**
+
+En el periodo analizado, las etnias que aparecen en los primeros lugares con más casos registrados son los Awajún, Kiwcha, Wampis, Shipibo-Konibo.
+
+::: panel-tabset
+## Tabla dinámica
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(scales)
+
+# 1. CARGA BLINDADA
+# Leemos ignorando los nombres corruptos del archivo original
+data_raw <- read_csv("data-P31cA.csv", col_names = FALSE, show_col_types = FALSE)
+
+# 2. LIMPIEZA Y ESTRUCTURA
+data_vih_final <- data_raw %>%
+  # Seleccionamos por posición (Etnia + Años)
+  select(1, 9:15) %>%
+  
+  # Asignamos nombres limpios manualmente
+  setNames(c("Etnia", "2019", "2020", "2021", "2022", "2023", "2024", "2025")) %>%
+  
+  # Quitamos la fila de títulos original
+  slice(-1) %>%
+  
+  # Limpieza de valores: "-" -> 0
+  mutate(across(-Etnia, ~as.numeric(str_replace(as.character(.), "-", "0")))) %>%
+  
+  # Filtro de seguridad
+  filter(!is.na(Etnia))
+
+# 3. ESCALA DE COLORES
+paleta_dw <- c("#f0f9e8", "#b6e3bb", "#75c8c5", "#4ba8c9", "#2989bd", "#0a6aad", "#254b8c")
+cols_anios <- c("2019", "2020", "2021", "2022", "2023", "2024", "2025")
+
+# Calculamos el máximo ignorando los NAs para que no falle
+max_val <- max(data_vih_final[cols_anios], na.rm = TRUE)
+
+color_scale <- col_numeric(palette = paleta_dw, domain = c(0, max_val), na.color = "#ffffff")
+
+# 4. TABLA REACTABLE
+reactable(
+  data_vih_final,
+  pagination = TRUE,
+  defaultPageSize = 20,
+  searchable = TRUE,
+  highlight = TRUE,
+  striped = FALSE,
+  
+  theme = reactableTheme(
+    style = list(fontFamily = "Roboto, Arial, sans-serif", fontSize = "14px"),
+    headerStyle = list(
+      backgroundColor = "#50778c",
+      color = "#ffffff",
+      fontWeight = "bold",
+      textTransform = "uppercase",
+      fontSize = "13px",
+      borderBottom = "3px solid #bf903f",
+      padding = "10px"
+    ),
+    rowStyle = list(borderBottom = "1px solid #e6e6e6", padding = "8px")
+  ),
+  
+  columns = list(
+    Etnia = colDef(
+      style = list(fontWeight = "bold", backgroundColor = "#fff", borderRight = "1px solid #eee"),
+      sticky = "left", minWidth = 150
+    ),
+    
+    # --- COLUMNAS CON PROTECCIÓN CONTRA NA ---
+    
+    `2019` = colDef(
+      minWidth = 65, align = "center",
+      style = function(value) {
+        # PROTECCIÓN: Si es NA, devolvemos blanco y terminamos aquí
+        if (is.na(value) || !is.numeric(value)) return(list(background = "#ffffff", color = "#333"))
+        
+        list(background = if (value == 0) "#ffffff" else color_scale(value),
+             color = if (value > (max_val * 0.5)) "white" else "#333",
+             fontWeight = "500")
+      }
+    ),
+    
+    `2020` = colDef(
+      minWidth = 65, align = "center",
+      style = function(value) {
+        if (is.na(value) || !is.numeric(value)) return(list(background = "#ffffff", color = "#333"))
+        
+        list(background = if (value == 0) "#ffffff" else color_scale(value),
+             color = if (value > (max_val * 0.5)) "white" else "#333",
+             fontWeight = "500")
+      }
+    ),
+    
+    `2021` = colDef(
+      minWidth = 65, align = "center",
+      style = function(value) {
+        if (is.na(value) || !is.numeric(value)) return(list(background = "#ffffff", color = "#333"))
+        
+        list(background = if (value == 0) "#ffffff" else color_scale(value),
+             color = if (value > (max_val * 0.5)) "white" else "#333",
+             fontWeight = "500")
+      }
+    ),
+    
+    `2022` = colDef(
+      minWidth = 65, align = "center",
+      style = function(value) {
+        if (is.na(value) || !is.numeric(value)) return(list(background = "#ffffff", color = "#333"))
+        
+        list(background = if (value == 0) "#ffffff" else color_scale(value),
+             color = if (value > (max_val * 0.5)) "white" else "#333",
+             fontWeight = "500")
+      }
+    ),
+    
+    `2023` = colDef(
+      minWidth = 65, align = "center",
+      style = function(value) {
+        if (is.na(value) || !is.numeric(value)) return(list(background = "#ffffff", color = "#333"))
+        
+        list(background = if (value == 0) "#ffffff" else color_scale(value),
+             color = if (value > (max_val * 0.5)) "white" else "#333",
+             fontWeight = "500")
+      }
+    ),
+    
+    `2024` = colDef(
+      minWidth = 65, align = "center",
+      style = function(value) {
+        if (is.na(value) || !is.numeric(value)) return(list(background = "#ffffff", color = "#333"))
+        
+        list(background = if (value == 0) "#ffffff" else color_scale(value),
+             color = if (value > (max_val * 0.5)) "white" else "#333",
+             fontWeight = "500")
+      }
+    ),
+    
+    `2025` = colDef(
+      minWidth = 65, align = "center",
+      style = function(value) {
+        if (is.na(value) || !is.numeric(value)) return(list(background = "#ffffff", color = "#333"))
+        
+        list(background = if (value == 0) "#ffffff" else color_scale(value),
+             color = if (value > (max_val * 0.5)) "white" else "#333",
+             fontWeight = "500")
+      }
+    )
+  )
+) %>%
+  htmlwidgets::prependContent(
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; margin-bottom: 15px;",
+      h3("Tabla 1 VIH en pueblos originarios 2019-2025", 
+         style = "font-weight: 700; margin-bottom: 5px; font-size: 22px;"),
+      div(style = "height: 2px; background-color: #333; width: 50px; margin-bottom: 10px;")
+    )
+  )
+            
+```
+
+## Datos fuentes
+```{r}
+make_download_table(data_vih_final, "data_vih_pueblos_originarios")
+```
+:::
+
+El 62% de los casos de VIH del total de casos en las poblaciones andinas amazónicas y afroperuanas, durante el 2019, corresponden a la etnia awajún. El 2020, 2021 y 2022, el 65%, 77% y 67% de los casos de VIH fueron de las etnias awajún y wampis. El 2023, los awajún y ashaninkas representan el 62%. Del 2021 al 2022, los ashaninkas aumentaron en 80% los registros con diagnóstico de VIH. Otra de las etnias que se observa aumento son los Wampis, del 2019 al 2020 aumentó del 94% y del 2020 al 2021, 139%.
+
+
+::: panel-tabset
+
+## Grafico
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-height: 7
+#| fig-width: 7
+
+library(tidyverse)
+library(plotly)
+library(scales)
+
+# 1. CARGA BLINDADA
+data_raw <- read_csv("data-P31cA.csv", col_names = FALSE, show_col_types = FALSE)
+
+# 2. LIMPIEZA Y PREPARACIÓN
+data_vih_long <- data_raw %>%
+  # Seleccionamos y renombramos manualmente (Etnia + Años)
+  select(1, 9:15) %>%
+  setNames(c("Etnia", "2019", "2020", "2021", "2022", "2023", "2024", "2025")) %>%
+  slice(-1) %>% # Quitamos encabezado original
+  
+  # Limpieza de valores
+  mutate(across(-Etnia, ~as.numeric(str_replace(as.character(.), "-", "0")))) %>%
+  
+  # --- CORRECCIÓN: FILTROS ---
+  filter(!is.na(Etnia)) %>%
+  filter(Etnia != "Total General") %>% # Eliminamos la fila de Total
+  
+  # Transformamos a formato largo para la animación (Etnia, Año, Valor)
+  pivot_longer(cols = -Etnia, names_to = "Year", values_to = "Value") %>%
+  
+  # Agregamos un padre común para la jerarquía del Treemap
+  mutate(Padre = "Pueblos Originarios") %>%
+  
+  # Filtramos ceros para que el gráfico no se rompa o muestre cajas vacías
+  filter(Value > 0) %>%
+  
+  # Creamos el texto del tooltip
+  mutate(
+    Texto_Tooltip = paste0(
+      "<b>", Etnia, "</b><br>",
+      "Año: ", Year, "<br>",
+      "Casos: ", Value
+    )
+  )
+
+# 3. TREEMAP ANIMADO
+plot_ly(
+  data = data_vih_long,
+  type = "treemap",
+  labels = ~Etnia,
+  parents = ~Padre,
+  values = ~Value,
+  
+  # --- LA MAGIA DE LA ANIMACIÓN ---
+  # 'frame' crea el slider de tiempo automáticamente
+  frame = ~Year, 
+  
+  # Estilos
+  textinfo = "label+value",
+  hoverinfo = "text",
+  hovertext = ~Texto_Tooltip,
+  branchvalues = "total",
+  marker = list(colorscale = "Viridis")
+) %>%
+  layout(
+    title = list(text = "<b>Evolución VIH en Pueblos Originarios (2019-2025)</b>", font = list(size = 20)),
+    margin = list(t = 60, l = 0, r = 0, b = 0),
+    
+    # Configuración de la animación
+    animation = list(
+      frame = list(duration = 1000, redraw = TRUE), # 1 segundo por año
+      transition = list(duration = 500)
+    )
+  )
+```
+
+## Datos fuentes
+
+```{r}
+make_download_table(data_vih_long, "data_raw")
+```
+:::
+
+## **Clasificación en el diagnóstico de VIH en poblaciones afroperuanas, andinas y amazónicas 2019-2023**
+
+::: panel-tabset
+## Tabla dinámica
+
+La categoría con más registros fue Enfermedad por VIH, sin otra especificación.
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(scales)
+
+# 1. CARGA Y LIMPIEZA DE DATOS
+data_tabla2 <- read_csv("data-qEoO2.csv", show_col_types = FALSE) %>%
+  rename_with(~trimws(.)) %>%
+  filter(Categoria != "Total general") %>%
+  # Convertimos guiones a ceros y todo a números
+  mutate(across(matches("^20"), ~as.numeric(str_replace(as.character(.), "-", "0"))))
+
+# 2. CONFIGURACIÓN DE COLORES
+paleta_diag <- c("#fff5f0", "#fcbba1", "#fb6a4a", "#cb181d")
+cols_anios <- c("2019", "2020", "2021", "2022", "2023", "2024", "2025")
+
+# Calculamos el máximo ignorando NAs para evitar errores globales
+max_val <- max(data_tabla2[cols_anios], na.rm = TRUE)
+# Si por alguna razón max_val es infinito o NA (tabla vacía), ponemos un default
+if(!is.finite(max_val)) max_val <- 100 
+
+color_scale <- col_numeric(palette = paleta_diag, domain = c(0, max_val), na.color = "#ffffff")
+
+# 3. TABLA REACTABLE (DEFINICIÓN SEGURA UNA A UNA)
+reactable(
+  data_tabla2,
+  groupBy = "Grupos étnicos",
+  pagination = FALSE,
+  highlight = TRUE,
+  striped = TRUE,
+  
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#f8f9fa",
+      color = "#333",
+      fontWeight = "bold",
+      borderBottom = "2px solid #ddd",
+      fontSize = "13px"
+    ),
+    rowStyle = list(borderBottom = "1px solid #eee"),
+    groupHeaderStyle = list(
+      backgroundColor = "#e9ecef",
+      fontWeight = "bold",
+      color = "#2c3e50"
+    )
+  ),
+  
+  columns = list(
+    `Grupos étnicos` = colDef(
+      minWidth = 150,
+      style = list(fontWeight = "bold")
+    ),
+    
+    Categoria = colDef(
+      name = "Diagnóstico",
+      minWidth = 250,
+      style = list(fontSize = "12px", color = "#555")
+    ),
+    
+    # --- COLUMNAS CON PROTECCIÓN TOTAL CONTRA ERRORES ---
+    
+    `2019` = colDef(
+      minWidth = 60, align = "center",
+      format = colFormat(separators = TRUE),
+      style = function(value) {
+        # SI ES NA O NO ES NUMÉRICO, DEVOLVER BLANCO INMEDIATAMENTE
+        if (!is.numeric(value) || is.na(value)) return(list(background = "#ffffff", color = "#333"))
+        
+        bg <- if (value == 0) "#ffffff" else color_scale(value)
+        color <- if (value > (max_val * 0.5)) "white" else "#333"
+        list(background = bg, color = color, fontWeight = "500", fontSize = "13px")
+      }
+    ),
+    
+    `2020` = colDef(
+      minWidth = 60, align = "center",
+      format = colFormat(separators = TRUE),
+      style = function(value) {
+        if (!is.numeric(value) || is.na(value)) return(list(background = "#ffffff", color = "#333"))
+        bg <- if (value == 0) "#ffffff" else color_scale(value)
+        color <- if (value > (max_val * 0.5)) "white" else "#333"
+        list(background = bg, color = color, fontWeight = "500", fontSize = "13px")
+      }
+    ),
+    
+    `2021` = colDef(
+      minWidth = 60, align = "center",
+      format = colFormat(separators = TRUE),
+      style = function(value) {
+        if (!is.numeric(value) || is.na(value)) return(list(background = "#ffffff", color = "#333"))
+        bg <- if (value == 0) "#ffffff" else color_scale(value)
+        color <- if (value > (max_val * 0.5)) "white" else "#333"
+        list(background = bg, color = color, fontWeight = "500", fontSize = "13px")
+      }
+    ),
+    
+    `2022` = colDef(
+      minWidth = 60, align = "center",
+      format = colFormat(separators = TRUE),
+      style = function(value) {
+        if (!is.numeric(value) || is.na(value)) return(list(background = "#ffffff", color = "#333"))
+        bg <- if (value == 0) "#ffffff" else color_scale(value)
+        color <- if (value > (max_val * 0.5)) "white" else "#333"
+        list(background = bg, color = color, fontWeight = "500", fontSize = "13px")
+      }
+    ),
+    
+    `2023` = colDef(
+      minWidth = 60, align = "center",
+      format = colFormat(separators = TRUE),
+      style = function(value) {
+        if (!is.numeric(value) || is.na(value)) return(list(background = "#ffffff", color = "#333"))
+        bg <- if (value == 0) "#ffffff" else color_scale(value)
+        color <- if (value > (max_val * 0.5)) "white" else "#333"
+        list(background = bg, color = color, fontWeight = "500", fontSize = "13px")
+      }
+    ),
+    
+    `2024` = colDef(
+      minWidth = 60, align = "center",
+      format = colFormat(separators = TRUE),
+      style = function(value) {
+        if (!is.numeric(value) || is.na(value)) return(list(background = "#ffffff", color = "#333"))
+        bg <- if (value == 0) "#ffffff" else color_scale(value)
+        color <- if (value > (max_val * 0.5)) "white" else "#333"
+        list(background = bg, color = color, fontWeight = "500", fontSize = "13px")
+      }
+    ),
+    
+    `2025` = colDef(
+      minWidth = 60, align = "center",
+      format = colFormat(separators = TRUE),
+      style = function(value) {
+        if (!is.numeric(value) || is.na(value)) return(list(background = "#ffffff", color = "#333"))
+        bg <- if (value == 0) "#ffffff" else color_scale(value)
+        color <- if (value > (max_val * 0.5)) "white" else "#333"
+        list(background = bg, color = color, fontWeight = "500", fontSize = "13px")
+      }
+    )
+  )
+) %>%
+  htmlwidgets::prependContent(
+    div(
+      style = "font-family: Arial, sans-serif; margin-bottom: 15px;",
+      h3("Tabla 2: Clasificación de diagnósticos de VIH por Etnia", 
+         style = "font-weight: 700; margin-bottom: 5px;"),
+      p("Haga clic en el nombre del grupo étnico (flecha) para ver el detalle.",
+        style = "color: #666; font-size: 13px; margin: 0;")
+    )
+  )
+```
+
+## Datos fuentes
+
+```{r}
+make_download_table(data_tabla2, "data_clasificacion_diagnosticos_VIH")
+```
+:::
+
+## **VIH en poblaciones amazónicas, andinas y población afroperuana por sexo 2019-2023**
+
+::: panel-tabset
+## Grafico
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-height: 7
+#| fig-width: 7
+#| fig-align: "center"
+
+library(tidyverse)
+library(plotly)
+
+# 1. DATOS (Mismos que tu código)
+data_grafico3 <- tribble(
+  ~Grupo, ~Anio, ~Sexo, ~Atenciones,
+  "Población afroperuana", 2019, "Mujer", 0, "Población afroperuana", 2019, "Hombre", 0,
+  "Poblaciones amazónicas", 2019, "Mujer", 146, "Poblaciones amazónicas", 2019, "Hombre", 244,
+  "Poblaciones andinas", 2019, "Mujer", 16, "Poblaciones andinas", 2019, "Hombre", 15,
+  "Población afroperuana", 2020, "Mujer", 1, "Población afroperuana", 2020, "Hombre", 3,
+  "Poblaciones amazónicas", 2020, "Mujer", 144, "Poblaciones amazónicas", 2020, "Hombre", 208,
+  "Poblaciones andinas", 2020, "Mujer", 16, "Poblaciones andinas", 2020, "Hombre", 9,
+  "Población afroperuana", 2021, "Mujer", 0, "Población afroperuana", 2021, "Hombre", 0,
+  "Poblaciones amazónicas", 2021, "Mujer", 264, "Poblaciones amazónicas", 2021, "Hombre", 363,
+  "Poblaciones andinas", 2021, "Mujer", 7, "Poblaciones andinas", 2021, "Hombre", 27,
+  "Población afroperuana", 2022, "Mujer", 2, "Población afroperuana", 2022, "Hombre", 1,
+  "Poblaciones amazónicas", 2022, "Mujer", 292, "Poblaciones amazónicas", 2022, "Hombre", 427,
+  "Poblaciones andinas", 2022, "Mujer", 5, "Poblaciones andinas", 2022, "Hombre", 44,
+  "Población afroperuana", 2023, "Mujer", 0, "Población afroperuana", 2023, "Hombre", 0,
+  "Poblaciones amazónicas", 2023, "Mujer", 334, "Poblaciones amazónicas", 2023, "Hombre", 514,
+  "Poblaciones andinas", 2023, "Mujer", 12, "Poblaciones andinas", 2023, "Hombre", 54,
+  "Población afroperuana", 2024, "Mujer", 0, "Población afroperuana", 2024, "Hombre", 2,
+  "Poblaciones amazónicas", 2024, "Mujer", 300, "Poblaciones amazónicas", 2024, "Hombre", 427,
+  "Poblaciones andinas", 2024, "Mujer", 15, "Poblaciones andinas", 2024, "Hombre", 34,
+  "Población afroperuana", 2025, "Mujer", 0, "Población afroperuana", 2025, "Hombre", 0,
+  "Poblaciones amazónicas", 2025, "Mujer", 252, "Poblaciones amazónicas", 2025, "Hombre", 303,
+  "Poblaciones andinas", 2025, "Mujer", 17, "Poblaciones andinas", 2025, "Hombre", 36
+)
+
+# 2. CALCULAR "TODOS"
+data_todos <- data_grafico3 %>%
+  group_by(Anio, Sexo) %>%
+  summarise(Atenciones = sum(Atenciones, na.rm = TRUE), .groups = "drop") %>%
+  mutate(Grupo = "Todos")
+
+data_final <- bind_rows(data_grafico3, data_todos)
+
+# 3. LÓGICA GRÁFICA
+grupos_lista <- c(unique(data_grafico3$Grupo), "Todos") 
+
+# IMPORTANTE: Inicializamos con un layout vacío para evitar conflictos de herencia
+p <- plot_ly() 
+
+for (g in grupos_lista) {
+  df_subset <- data_final %>% filter(Grupo == g)
+  es_visible <- (g == grupos_lista[1])
+  
+  # Barra Mujeres
+  p <- add_trace(p,
+    data = df_subset %>% filter(Sexo == "Mujer"),
+    x = ~Anio, y = ~Atenciones, type = 'bar',
+    name = 'Mujer', legendgroup = 'Mujer',
+    visible = es_visible,
+    marker = list(color = "#e41a1c"), 
+    hovertemplate = paste0("<b>", g, "</b><br>Año: %{x}<br>Mujeres: %{y}<extra></extra>")
+  )
+  
+  # Barra Hombres
+  p <- add_trace(p,
+    data = df_subset %>% filter(Sexo == "Hombre"),
+    x = ~Anio, y = ~Atenciones, type = 'bar',
+    name = 'Hombre', legendgroup = 'Hombre',
+    visible = es_visible,
+    marker = list(color = "#377eb8"),
+    hovertemplate = paste0("<b>", g, "</b><br>Año: %{x}<br>Hombres: %{y}<extra></extra>")
+  )
+}
+
+# 4. BOTONES
+botones <- list()
+n_grupos <- length(grupos_lista)
+for (i in 1:n_grupos) {
+  visibilidad <- rep(FALSE, n_grupos * 2)
+  visibilidad[c(2*i-1, 2*i)] <- TRUE 
+  botones[[i]] <- list(
+    method = "restyle",
+    args = list("visible", as.list(visibilidad)),
+    label = grupos_lista[i]
+  )
+}
+
+# 5. LAYOUT Y CONFIGURACIÓN (LA SOLUCIÓN ESTÁ AQUÍ)
+p %>% layout(
+  title = list(text = "", font = list(size = 18)),
+  xaxis = list(title = "Año", type = 'category'),
+  yaxis = list(title = "Atenciones"),
+  barmode = 'group',
+  margin = list(t = 100), 
+  legend = list(x = 1, y = 0.5),
+  autosize = TRUE, # Ayuda a que no se deforme
+  updatemenus = list(
+    list(
+      y = 1.15, x = 0.1,
+      buttons = botones,
+      active = 0,
+      showactive = TRUE
+    )
+  )
+) %>%
+  # !! ESTA LÍNEA SOLUCIONA EL PROBLEMA DE DEFORMACIÓN EN HTML !!
+  config(responsive = TRUE, displayModeBar = FALSE)
+```
+
+## Datos fuentes
+
+```{r}
+make_download_table(data_grafico3, "data_VIH_por_sexo_y_etnia")
+
+```
+:::
+
+## **VIH en poblaciones amazónicas, andinas y afroperuana por curso de vida 2019-2023**
+
+::: panel-tabset
+## Gráfico
+
+Tanto en andinos como en afroperuanos, las edades con mayores registros de casos son los adultos de 30 a 59 años. En las poblaciones amazónicas son los jóvenes de 18 a 29 años con más del 50% de las atenciones. En las poblaciones andinas se observa un incremento en este mismo grupo de edad, en relación al 2022, el 2023 aumentó en más del 100% sus atenciones.
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-height: 7
+#| fig-width: 7
+
+library(tidyverse)
+library(plotly)
+
+# 1. DATOS (Mismos que antes)
+data_raw <- tribble(
+  ~Grupo, ~Edad, ~`2019`, ~`2020`, ~`2021`, ~`2022`, ~`2023`, ~`2024`, ~`2025`,
+  "Andinos", "< 01m", 1, 0, 0, 0, 0, 0, 0,
+  "Andinos", "01-11m", 1, 0, 0, 0, 0, 0, 1,
+  "Andinos", "01-05a", 1, 0, 1, 0, 0, 7, 3,
+  "Andinos", "06-11a", 1, 0, 0, 5, 0, 1, 0,
+  "Andinos", "12a - 17a", 6, 8, 5, 7, 1, 0, 3,
+  "Andinos", "18-29a", 8, 6, 14, 15, 46, 14, 15,
+  "Andinos", "30-59a", 11, 10, 12, 21, 16, 21, 25,
+  "Andinos", "60a >", 2, 1, 2, 1, 3, 6, 6,
+  
+  "Amazónicos", "< 01m", 0, 1, 1, 1, 0, 7, 1,
+  "Amazónicos", "01-11m", 5, 1, 7, 3, 5, 12, 1,
+  "Amazónicos", "01-05a", 4, 8, 11, 21, 21, 25, 16,
+  "Amazónicos", "06-11a", 7, 4, 5, 3, 10, 20, 14,
+  "Amazónicos", "12a - 17a", 32, 25, 73, 86, 65, 42, 39,
+  "Amazónicos", "18-29a", 227, 199, 373, 366, 451, 389, 306,
+  "Amazónicos", "30-59a", 113, 112, 145, 229, 289, 220, 166,
+  "Amazónicos", "60a >", 2, 2, 12, 10, 7, 12, 12,
+  
+  "Afroperuano", "01-11m", 0, 0, 0, 1, 0, 0, 0,
+  "Afroperuano", "12a - 17a", 0, 0, 0, 1, 0, 0, 0,
+  "Afroperuano", "18-29a", 0, 0, 0, 0, 0, 1, 0,
+  "Afroperuano", "30-59a", 0, 4, 0, 1, 0, 0, 0,
+  "Afroperuano", "60a >", 0, 0, 0, 0, 0, 1, 0
+)
+
+# 2. TRANSFORMACIÓN
+data_grafico4 <- data_raw %>%
+  pivot_longer(cols = matches("^20"), names_to = "Anio", values_to = "Casos") %>%
+  mutate(
+    Edad = factor(Edad, levels = c("< 01m", "01-11m", "01-05a", "06-11a", "12a - 17a", "18-29a", "30-59a", "60a >"))
+  )
+
+# 3. GRÁFICO (Sin textos encima)
+plot_ly(
+  data = data_grafico4,
+  x = ~Edad,
+  y = ~Casos,
+  color = ~Grupo,
+  type = "bar",
+  frame = ~Anio, # Animación
+  colors = c("Andinos" = "#019c00", "Amazónicos" = "#ff8800", "Afroperuano" = "#c11f1f"),
+  
+  # --- CORRECCIÓN ---
+  # Usamos 'hovertext' para que el texto SOLO salga al pasar el mouse
+  hovertext = ~paste0("<b>", Grupo, "</b><br>Edad: ", Edad, "<br>Casos: ", Casos),
+  hoverinfo = "text",
+  
+  # Aseguramos que no haya texto fijo en las barras
+  textposition = "none" 
+) %>%
+  layout(
+    title = list(text = "", font = list(size = 18)),
+    yaxis = list(title = "Número de Casos"),
+    xaxis = list(title = "Curso de Vida"),
+    barmode = "group",
+    legend = list(title = list(text = "<b>Grupo Étnico</b>")),
+    margin = list(t = 60),
+    
+    animation = list(
+      frame = list(duration = 1000, redraw = TRUE),
+      transition = list(duration = 500)
+    ) %>% config(responsive = TRUE, displayModeBar = FALSE)
+  )
+```
+
+## Datos fuentes
+
+```{r}
+make_download_table(data_raw, "data_vih_por_curso_de_vida")
+```
+:::
+
+## **Distribución de la infección por VIH por departamentos 2019-2025**
+
+::: panel-tabset
+## Mapa: VIH en población afroperuana por departamentos 2019-2025.
+
+Según los casos registrados por departamento, el 2020 dos (02) corresponden a Loreto y dos (02) a Piura. El 2022 registraron Ica (02) y Lambayeque (1). No hubo registros de casos el 2019, 2021 y el 2023.
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-height: 7
+
+library(tidyverse)
+library(plotly)
+library(sf)
+library(jsonlite)
+
+# 1. CARGA DE MAPA (GEOJSON)
+# Asegúrate de que el archivo .geojson esté en tu carpeta del proyecto
+archivo_geojson <- "peru_departamental_simple.geojson"
+
+# Leemos el GeoJSON como objeto R (para los nombres) y como lista (para Plotly)
+tryCatch({
+  mapa_sf <- st_read(archivo_geojson, quiet = TRUE)
+  geojson_peru <- jsonlite::fromJSON(archivo_geojson, simplifyVector = FALSE)
+}, error = function(e) {
+  stop("Error: No se encuentra el archivo 'peru_departamental_simple.geojson'.")
+})
+
+# 2. PROCESAMIENTO DE DATOS
+data_raw <- read_csv("data-jM6TC.csv", show_col_types = FALSE)
+
+data_casos <- data_raw %>%
+  # Estandarizamos nombres (Mayúsculas y sin espacios extra)
+  mutate(Departamentos = str_to_upper(trimws(Departamentos))) %>%
+  # Limpieza de valores
+  mutate(across(matches("^20"), ~as.numeric(str_replace_all(as.character(.), c("-"="0"))))) %>%
+  select(Departamentos, matches("^20")) %>%
+  pivot_longer(cols = -Departamentos, names_to = "Anio", values_to = "Casos")
+
+# 3. MALLA COMPLETA (Vital para la animación)
+deptos_mapa <- unique(mapa_sf$NOMBDEP)
+anios_data <- unique(data_casos$Anio)
+
+data_final <- expand.grid(NOMBDEP = deptos_mapa, Anio = anios_data) %>%
+  left_join(data_casos, by = c("NOMBDEP" = "Departamentos", "Anio")) %>%
+  mutate(
+    # Convertimos 0 a NA para que sea transparente en la capa superior
+    Casos_Plot = if_else(is.na(Casos) | Casos == 0, NA_real_, Casos),
+    Texto = paste0("<b>", NOMBDEP, "</b><br>Año: ", Anio, "<br>Casos: ", replace_na(Casos, 0))
+  ) %>%
+  arrange(Anio)
+
+# 4. GRÁFICO DE DOBLE CAPA
+plot_ly() %>%
+  
+  # --- CAPA 1: EL ESQUELETO (Límites Departamentales) ---
+  # Esta capa dibuja TODOS los departamentos en gris con bordes blancos.
+  # Siempre es visible, asegurando que el mapa nunca desaparezca.
+  add_trace(
+    type = "choropleth",
+    geojson = geojson_peru,
+    locations = mapa_sf$NOMBDEP,     # Todos los departamentos del GeoJSON
+    z = rep(1, nrow(mapa_sf)),       # Valor dummy (1) para pintar todo igual
+    featureidkey = "properties.NOMBDEP",
+    colorscale = list(c(0, 1), c("#eeeeee", "#eeeeee")), # Color GRIS CLARO de fondo
+    showscale = FALSE,               # Sin barra de color para el fondo
+    marker = list(line = list(width = 1, color = "white")), # <--- LÍMITES BLANCOS VISIBLES
+    hoverinfo = "text",
+    text = mapa_sf$NOMBDEP,          # Nombre del depto al pasar el mouse por zonas vacías
+    inherit = FALSE                  # No heredar animación (esta capa es fija)
+  ) %>%
+  
+  # --- CAPA 2: LOS DATOS (Animación) ---
+  # Esta capa se superpone. Donde es NA (0 casos), es transparente.
+  add_trace(
+    data = data_final,
+    type = "choropleth",
+    geojson = geojson_peru,
+    locations = ~NOMBDEP,
+    featureidkey = "properties.NOMBDEP",
+    z = ~Casos_Plot,                 # Datos con NAs
+    frame = ~Anio,                   # Animación
+    colorscale = "Reds",             # Escala Roja para los datos
+    zmin = 1,                        # Mínimo 1 para ignorar los 0s
+    zmax = max(data_final$Casos, na.rm = TRUE),
+    marker = list(line = list(width = 1, color = "white")), # Límites también aquí para continuidad
+    text = ~Texto,
+    hoverinfo = "text"
+  ) %>%
+  
+  # --- CONFIGURACIÓN DE VISUALIZACIÓN ---
+  layout(
+    title = list(text = "", font = list(size = 18)),
+    geo = list(
+      scope = 'south america',
+      showland = FALSE,      # Desactivamos tierra automática (ya tenemos Capa 1)
+      showcountries = FALSE,
+      showframe = FALSE,
+      showcoastlines = FALSE,
+      projection = list(type = 'mercator'),
+      center = list(lat = -9.5, lon = -75),   # Centro de Perú
+      lataxis = list(range = c(-18.5, 0)),    # Zoom Latitud
+      lonaxis = list(range = c(-81.5, -68.5)),# Zoom Longitud
+      bgcolor = "rgba(0,0,0,0)"               # Fondo transparente
+    ),
+    margin = list(t = 50, l = 0, r = 0, b = 0)
+  ) %>%
+  
+  # --- CONFIGURACIÓN DE ANIMACIÓN (Fuera del layout) ---
+  animation_opts(
+    frame = 1500, 
+    transition = 700, 
+    redraw = TRUE
+  ) %>%
+  animation_slider(
+    currentvalue = list(prefix = "Año: ")
+  ) %>%
+  colorbar(title = "N° Casos")
+```
+
+## Datos fuentes
+
+```{r}
+make_download_table(data_raw, "data_vih_afroperuana_por_departamento")
+```
+:::
+
+::: panel-tabset
+## Mapa: VIH en Poblaciones Amazónicas (2019-2025).
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-height: 7
+
+library(tidyverse)
+library(plotly)
+library(sf)
+library(jsonlite)
+
+# 1. CARGA DE MAPA BASE
+# Intentamos cargar el GeoJSON local (el mismo que usaste antes)
+geojson_peru <- tryCatch({
+  jsonlite::fromJSON("peru_departamental_simple.geojson", simplifyVector = FALSE)
+}, error = function(e) { stop("Error: Falta 'peru_departamental_simple.geojson'.") })
+
+# Para nombres oficiales
+mapa_sf <- tryCatch({
+  st_read("peru_departamental_simple.geojson", quiet = TRUE)
+}, error = function(e) { NULL })
+
+# 2. DATOS RECONSTRUIDOS (Población Amazónica - Extraídos de Flourish)
+data_amazonicos_raw <- tribble(
+  ~Departamento, ~`2019`, ~`2020`, ~`2021`, ~`2022`, ~`2023`, ~`2024`, ~`2025`,
+  "AMAZONAS", 263, 235, 495, 436, 448, 377, 260,
+  "ANCASH", 1, 0, 0, 0, 3, 0, 0,
+  "APURIMAC", 0, 0, 0, 0, 0, 0, 0,
+  "AREQUIPA", 0, 0, 0, 0, 0, 0, 2,
+  "AYACUCHO", 0, 0, 0, 0, 4, 3, 0,
+  "CAJAMARCA", 0, 0, 0, 1, 5, 0, 1,
+  "CALLAO", 0, 0, 0, 0, 4, 0, 0,
+  "CUSCO", 0, 3, 6, 3, 1, 4, 16,
+  "HUANCAVELICA", 0, 0, 0, 0, 0, 1, 0,
+  "HUANUCO", 2, 6, 3, 3, 0, 0, 0,
+  "ICA", 0, 0, 0, 1, 0, 0, 2,
+  "JUNIN", 2, 3, 6, 27, 8, 18, 9,
+  "LA LIBERTAD", 0, 3, 2, 1, 0, 1, 0,
+  "LAMBAYEQUE", 2, 0, 1, 4, 21, 4, 3,
+  "LIMA", 12, 5, 7, 22, 151, 11, 11,
+  "LORETO", 61, 47, 53, 87, 136, 191, 174,
+  "MADRE DE DIOS", 0, 2, 3, 7, 2, 0, 0,
+  "MOQUEGUA", 0, 0, 0, 0, 0, 0, 0,
+  "PASCO", 2, 2, 6, 7, 5, 4, 6,
+  "PIURA", 8, 27, 6, 7, 7, 3, 0,
+  "PUNO", 0, 0, 1, 5, 0, 0, 0,
+  "SAN MARTIN", 0, 0, 0, 0, 10, 6, 13,
+  "TACNA", 0, 0, 0, 0, 0, 0, 0,
+  "TUMBES", 0, 0, 0, 0, 1, 0, 0,
+  "UCAYALI", 37, 19, 39, 108, 178, 104, 58
+)
+
+# 3. PREPARACIÓN Y MALLA COMPLETA
+data_casos <- data_amazonicos_raw %>%
+  pivot_longer(cols = -Departamento, names_to = "Anio", values_to = "Casos")
+
+# Aseguramos que todos los deptos del mapa existan en los datos
+deptos_mapa <- unique(mapa_sf$NOMBDEP)
+anios_data <- unique(data_casos$Anio)
+
+data_final <- expand.grid(NOMBDEP = deptos_mapa, Anio = anios_data) %>%
+  left_join(data_casos, by = c("NOMBDEP" = "Departamento", "Anio")) %>%
+  mutate(
+    # Convertimos 0 a NA para transparencia
+    Casos_Plot = if_else(is.na(Casos) | Casos == 0, NA_real_, Casos),
+    Texto = paste0("<b>", NOMBDEP, "</b><br>Año: ", Anio, "<br>Casos: ", replace_na(Casos, 0))
+  ) %>%
+  arrange(Anio)
+
+# 4. MAPA DOBLE CAPA (Fondo Gris + Datos)
+plot_ly() %>%
+  
+  # CAPA 1: ESQUELETO (Fondo Gris Fijo)
+  add_trace(
+    type = "choropleth",
+    geojson = geojson_peru,
+    locations = mapa_sf$NOMBDEP,
+    z = rep(1, nrow(mapa_sf)),
+    featureidkey = "properties.NOMBDEP",
+    colorscale = list(c(0, 1), c("#eeeeee", "#eeeeee")),
+    showscale = FALSE,
+    marker = list(line = list(width = 1, color = "white")),
+    hoverinfo = "text",
+    text = mapa_sf$NOMBDEP,
+    inherit = FALSE
+  ) %>%
+  
+  # CAPA 2: DATOS ANIMADOS (Rojos)
+  add_trace(
+    data = data_final,
+    type = "choropleth",
+    geojson = geojson_peru,
+    locations = ~NOMBDEP,
+    featureidkey = "properties.NOMBDEP",
+    z = ~Casos_Plot,
+    frame = ~Anio,
+    colorscale = "Reds",
+    zmin = 1,
+    zmax = max(data_final$Casos, na.rm = TRUE),
+    marker = list(line = list(width = 1, color = "white")),
+    text = ~Texto,
+    hoverinfo = "text"
+  ) %>%
+  
+  layout(
+    title = list(text = "", font = list(size = 18)),
+    geo = list(
+      scope = 'south america',
+      showland = FALSE,
+      showcountries = FALSE,
+      showframe = FALSE,
+      showcoastlines = FALSE,
+      projection = list(type = 'mercator'),
+      center = list(lat = -9.5, lon = -75),
+      lataxis = list(range = c(-18.5, 0)),
+      lonaxis = list(range = c(-81.5, -68.5)),
+      bgcolor = "rgba(0,0,0,0)"
+    ),
+    margin = list(t = 50, l = 0, r = 0, b = 0)
+  ) %>%
+  
+  animation_opts(
+    frame = 1500, 
+    transition = 700, 
+    redraw = TRUE
+  ) %>%
+  animation_slider(
+    currentvalue = list(prefix = "Año: ")
+  ) %>%
+  colorbar(title = "N° Casos")
+```
+
+## Datos fuentes
+
+```{r}
+make_download_table(data_amazonicos_raw, "data_vih_poblacion_amazonica")
+```
+:::
+
+::: panel-tabset
+## Mapa: VIH en Poblaciones Andinas (2019-2025).
+
+```{r}
+
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-height: 7
+
+library(tidyverse)
+library(plotly)
+library(sf)
+library(jsonlite)
+
+# 1. CARGA DE MAPA (GEOJSON)
+# Reutilizamos el mismo archivo local
+archivo_geojson <- "peru_departamental_simple.geojson"
+
+tryCatch({
+  mapa_sf <- st_read(archivo_geojson, quiet = TRUE)
+  geojson_peru <- jsonlite::fromJSON(archivo_geojson, simplifyVector = FALSE)
+}, error = function(e) {
+  stop("Error: No se encuentra el archivo 'peru_departamental_simple.geojson'.")
+})
+
+# 2. DATOS RECONSTRUIDOS (Población Andina - Extraídos de Flourish)
+# Nota: He normalizado nombres como "Apurïmac" -> "APURIMAC" y "Lima 1/" -> "LIMA"
+data_andinos_raw <- tribble(
+  ~Departamento, ~`2019`, ~`2020`, ~`2021`, ~`2022`, ~`2023`, ~`2024`, ~`2025`,
+  "AMAZONAS", 0, 0, 0, 0, 0, 0, 0,
+  "ANCASH", 0, 2, 4, 7, 1, 3, 6,
+  "APURIMAC", 0, 0, 0, 0, 0, 2, 0,
+  "AREQUIPA", 0, 3, 0, 0, 0, 0, 2,
+  "AYACUCHO", 13, 5, 18, 17, 29, 5, 2,
+  "CAJAMARCA", 0, 0, 0, 0, 0, 0, 0,
+  "CALLAO", 1, 1, 0, 0, 0, 0, 0,
+  "CUSCO", 1, 0, 0, 3, 16, 10, 8,
+  "HUANCAVELICA", 0, 0, 0, 0, 0, 6, 14,
+  "HUANUCO", 0, 0, 0, 0, 0, 0, 0,
+  "ICA", 0, 0, 0, 3, 0, 0, 1,
+  "JUNIN", 0, 0, 0, 0, 0, 0, 0,
+  "LA LIBERTAD", 0, 0, 0, 0, 0, 0, 1,
+  "LAMBAYEQUE", 1, 0, 0, 2, 1, 5, 1,
+  "LIMA", 10, 8, 3, 14, 9, 14, 14,
+  "LORETO", 1, 1, 2, 0, 3, 3, 2,
+  "MADRE DE DIOS", 0, 2, 0, 0, 0, 0, 0,
+  "MOQUEGUA", 0, 0, 0, 0, 0, 0, 0,
+  "PASCO", 0, 0, 0, 0, 0, 0, 0,
+  "PIURA", 1, 2, 0, 0, 1, 0, 0,
+  "PUNO", 0, 0, 7, 3, 6, 1, 2,
+  "SAN MARTIN", 0, 0, 0, 0, 0, 0, 0,
+  "TACNA", 2, 1, 0, 0, 0, 0, 0,
+  "TUMBES", 0, 0, 0, 0, 0, 0, 0,
+  "UCAYALI", 1, 0, 0, 0, 0, 0, 0
+)
+
+# 3. PREPARACIÓN Y MALLA COMPLETA
+data_casos <- data_andinos_raw %>%
+  pivot_longer(cols = -Departamento, names_to = "Anio", values_to = "Casos")
+
+deptos_mapa <- unique(mapa_sf$NOMBDEP)
+anios_data <- unique(data_casos$Anio)
+
+data_final <- expand.grid(NOMBDEP = deptos_mapa, Anio = anios_data) %>%
+  left_join(data_casos, by = c("NOMBDEP" = "Departamento", "Anio")) %>%
+  mutate(
+    # Convertimos 0 a NA para transparencia (truco de doble capa)
+    Casos_Plot = if_else(is.na(Casos) | Casos == 0, NA_real_, Casos),
+    Texto = paste0("<b>", NOMBDEP, "</b><br>Año: ", Anio, "<br>Casos: ", replace_na(Casos, 0))
+  ) %>%
+  arrange(Anio)
+
+# 4. MAPA DOBLE CAPA (Fondo Gris + Datos Rojos)
+plot_ly() %>%
+  
+  # CAPA 1: ESQUELETO (Fondo Gris Fijo con bordes blancos)
+  add_trace(
+    type = "choropleth",
+    geojson = geojson_peru,
+    locations = mapa_sf$NOMBDEP,
+    z = rep(1, nrow(mapa_sf)),
+    featureidkey = "properties.NOMBDEP",
+    colorscale = list(c(0, 1), c("#eeeeee", "#eeeeee")),
+    showscale = FALSE,
+    marker = list(line = list(width = 1, color = "white")),
+    hoverinfo = "text",
+    text = mapa_sf$NOMBDEP,
+    inherit = FALSE
+  ) %>%
+  
+  # CAPA 2: DATOS ANIMADOS (Rojos)
+  add_trace(
+    data = data_final,
+    type = "choropleth",
+    geojson = geojson_peru,
+    locations = ~NOMBDEP,
+    featureidkey = "properties.NOMBDEP",
+    z = ~Casos_Plot,
+    frame = ~Anio,
+    colorscale = "Reds",
+    zmin = 1,
+    zmax = max(data_final$Casos, na.rm = TRUE), # Máximo dinámico según estos datos
+    marker = list(line = list(width = 1, color = "white")),
+    text = ~Texto,
+    hoverinfo = "text"
+  ) %>%
+  
+  layout(
+    title = list(text = "", font = list(size = 18)),
+    geo = list(
+      scope = 'south america',
+      showland = FALSE,
+      showcountries = FALSE,
+      showframe = FALSE,
+      showcoastlines = FALSE,
+      projection = list(type = 'mercator'),
+      center = list(lat = -9.5, lon = -75),
+      lataxis = list(range = c(-18.5, 0)),
+      lonaxis = list(range = c(-81.5, -68.5)),
+      bgcolor = "rgba(0,0,0,0)"
+    ),
+    margin = list(t = 50, l = 0, r = 0, b = 0)
+  ) %>%
+  
+  animation_opts(
+    frame = 1500, 
+    transition = 700, 
+    redraw = TRUE
+  ) %>%
+  animation_slider(
+    currentvalue = list(prefix = "Año: ")
+  ) %>%
+  colorbar(title = "N° Casos")
+
+```
+
+## Datos fuentes
+
+```{r}
+make_download_table(data_andinos_raw, "data_andinos_raw")
+```
+:::
