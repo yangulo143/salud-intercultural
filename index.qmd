@@ -41,7 +41,7 @@ Encontrará contenido sobre algunas enfermedades que afectan a los pueblos de la
 :::
 
 ::: {.g-col-6}
-### 🍎 [Hipertensión Arterial](hipertension.html)
+### 🍎 [Hipertensión, asesino silencioso que amenaza a poblaciones indígenas y afroperuanas](hipertension.html)
 **Fecha:** Diciembre 2025
 **Datos:** HISS MINSA 
 :::

@@ -8,6 +8,7 @@ project:
     - desnutricion.qmd
     - vih.qmd
     - anemia.qmd
+    - hipertension.qmd
 
 website:
   title: "Sala situacional Salud intercultural e Investigación Social (2019-2024)"
@@ -25,6 +26,8 @@ website:
         text: "VIH"
       - href: anemia.qmd
         text: "Anemia"
+      - href: hipertension.qmd
+        text: "Hipertensión"
 
 format:
   html:

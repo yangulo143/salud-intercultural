@@ -1,0 +1,1110 @@
+---
+title: " Hipertensión, asesino silencioso que amenaza a poblaciones indígenas y afroperuanas"
+subtitle: "Análisis de datos del Ministerio de Salud (MINSA)"
+date: last-modified
+author: "Subdirección de Medicina Tradicional, Interculturalidad e Investigación Social (SUMEC-CENSI)"
+format: 
+  html:
+    theme: cosmo
+    toc: true
+    page-layout: full
+    code-fold: true
+execute:
+  warning: false
+  message: false
+footer: "Fuente de datos: Sistema HISS-MINSA | Fecha de corte: 03/2024"
+---
+
+La hipertensión alta conocido como el asesino silencioso que puede afectar diferentes partes del cuerpo y con graves consecuencias en la salud.
+
+Una persona puede padecerla por años sin ningún síntoma, pero cuando la presión arterial se eleva muy alto puede producir problemas cardíacos renales, ataque cardiaco o accidentes cerebrovasculares, entre otras afecciones. Las alteraciones que provoca en órganos vitales es una de las principales causas de muerte.
+
+Una persona sufre de hipertensión cuando su tensión arterial aumenta de manera significativa, esta elevación, se puede dar de manera intempestiva ya sea por la actividad desempeñada, el estado de ánimo, con la práctica de ejercicios o incluso mientras duerme.
+
+Se analizó esta enfermedad en base a la data del HIS Minsa desde el 2019 hasta mayo del 2023, valorando la pertenencia étnica.
+
+Según el CIE 10, Clasificación Estadística Internacional de Enfermedades y Problemas Relacionados con la Salud, elaborado por la Organización Mundial de la Salud, se considera estas estas categorías como enfermedades hipertensivas:
+
+-   Hipertensión Esencial (Primaria)
+
+-   Enfermedad Cardiaca Hipertensiva
+
+-   Enfermedad Renal Hipertensiva
+
+-   Enfermedad Cardiorrenal Hipertensiva
+
+-   Hipertensión Secundaria
+
+## **Hipertensión en poblaciones indígenas, afroperuanas y mestizas 2019-2025**
+
+Los mestizos tienen el 98% de los casos registrados en hipertensión en el periodo analizado. En las poblaciones amazónicas y andinas 1%, respectivamente.
+
+::: panel-tabset
+## Tabla dinámica
+
+```{r}
+
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-align: "center"
+#| fig-height: 6
+
+library(tidyverse)
+library(plotly)
+library(scales)
+library(DT)
+
+# --- FUNCIÓN AUXILIAR PARA TABLAS DE DESCARGA ---
+# Esta función crea estandariza el botón de Excel para todos los gráficos
+make_download_table <- function(data_input, filename_label = "datos") {
+  datatable(
+    data_input,
+    extensions = 'Buttons',
+    rownames = FALSE,
+    options = list(
+      dom = 'Bfrtip',
+      buttons = list(
+        list(extend = 'excel', filename = filename_label, title = filename_label),
+        list(extend = 'csv', filename = filename_label)
+      ),
+      pageLength = 5, # Pocas filas para no ocupar mucho espacio
+      scrollX = TRUE,
+      language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')
+    )
+  )
+}
+
+
+# 1. DATOS
+csv_data <- "Grupo,Anio,Atenciones
+Población afroperuana,2019,35
+Población afroperuana,2020,55
+Población afroperuana,2021,74
+Población afroperuana,2022,85
+Población afroperuana,2023,39
+Población afroperuana,2024,59
+Población afroperuana,2025,75
+Poblaciones amazónicas,2019,1752
+Poblaciones amazónicas,2020,1575
+Poblaciones amazónicas,2021,2342
+Poblaciones amazónicas,2022,2535
+Poblaciones amazónicas,2023,838
+Poblaciones amazónicas,2024,4494
+Poblaciones amazónicas,2025,4057
+Poblaciones andinas,2019,1941
+Poblaciones andinas,2020,1173
+Poblaciones andinas,2021,1556
+Poblaciones andinas,2022,1486
+Poblaciones andinas,2023,657
+Poblaciones andinas,2024,1678
+Poblaciones andinas,2025,1664
+Población mestiza,2019,190886
+Población mestiza,2020,113536
+Población mestiza,2021,160236
+Población mestiza,2022,186618
+Población mestiza,2023,57002
+Población mestiza,2024,212553
+Población mestiza,2025,198500"
+
+data_ht <- read.csv(text = csv_data)
+
+# 2. COLORES FLOURISH (Extraídos del código)
+cols_ht <- c(
+  "Población afroperuana" = "#a193f3",
+  "Poblaciones amazónicas" = "#eb8484",
+  "Poblaciones andinas" = "#ffe281",
+  "Población mestiza" = "#d6a4e9"
+)
+
+# 3. GRÁFICO DE ÁREAS (FACETADO PARA MEJOR VISIBILIDAD)
+# Dado que los rangos son MUY distintos (75 vs 200,000), separar en facetas con escala libre es lo mejor.
+p <- ggplot(data_ht, aes(x = Anio, y = Atenciones, fill = Grupo)) +
+  geom_area(alpha = 0.8) +
+  geom_line(aes(color = Grupo), size = 1) +
+  geom_point(aes(color = Grupo, 
+                 text = paste0("<b>", Grupo, "</b><br>",
+                               "Año: ", Anio, "<br>",
+                               "Atenciones: ", format(Atenciones, big.mark = ","))),
+             size = 1.5) +
+  scale_fill_manual(values = cols_ht) +
+  scale_color_manual(values = cols_ht) +
+  facet_wrap(~Grupo, scales = "free_y", ncol = 2) + # Escalas libres vitales aquí
+  scale_y_continuous(labels = comma) +
+  labs(x = "Año", y = "Atenciones") +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    strip.text = element_text(face = "bold", size = 11),
+    panel.grid.minor = element_blank()
+  )
+
+ggplotly(p, tooltip = "text") %>%
+  layout(
+    title = list(text = "", font = list(size = 18)),
+    margin = list(t = 60, b = 60, l = 60)
+  ) %>%
+  config(responsive = TRUE, displayModeBar = FALSE)
+
+```
+
+## Data Fuente
+
+```{r}
+
+make_download_table(data_ht, filename_label = "data_ht")
+
+```
+:::
+
+## **Tipos de enfermedades hipertensivas en poblaciones amazónicas, andinas y afroperuana 2019-2025**
+
+La hipertensión esencial es el tipo de enfermedad hipertensiva que más afecta a todos los grupos étnicos. En la población afroperuana oscila entre el 89% al 100%. En las poblaciones andinas, varía entre el 87%y 91%. En las poblaciones amazónicas, 88% al 92%. Es seguido por la hipertensión secundaria.
+
+::: panel-tabset
+## Tabla dinamica
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-align: "center"
+
+# Librerías necesarias
+library(tidyverse)
+library(reactable)
+library(reactablefmtr)
+library(htmltools)
+
+# 1. CARGA Y LIMPIEZA DE DATOS
+data_raw <- read_csv("data-klalj.csv", show_col_types = FALSE, col_types = cols(.default = "c"))
+
+data_table <- data_raw %>%
+  # Renombrar para facilitar
+  rename(Tipo = `Tipo de Hipertensión`, Grupo = `Grupo étnico`) %>%
+  # Filtrar totales y filas vacías
+  filter(!str_detect(Tipo, "Total")) %>%
+  # Limpiar números en todas las columnas de años (2019-2025)
+  mutate(across(starts_with("20"), ~ {
+    x <- str_remove_all(., ",")
+    x <- ifelse(x %in% c("-", "", "NaN", "null"), "0", x)
+    as.numeric(x)
+  })) %>%
+  # Reemplazar NAs con 0
+  mutate(across(starts_with("20"), ~replace_na(., 0))) %>%
+  # Seleccionar y ordenar columnas
+  select(Grupo, Tipo, `2019`, `2020`, `2021`, `2022`, `2023`, `2024`, `2025`) %>%
+  arrange(Grupo, desc(`2025`)) # Ordenar por el último año
+
+# 2. DEFINICIÓN DE COLORES Y ESTILOS
+# Usamos una paleta azul similar a la de Flourish/Datawrapper para las barras
+bar_color <- "#18a1cd"
+text_color <- "#333333"
+
+# 3. CREACIÓN DE LA TABLA REACTABLE
+reactable(
+  data_table,
+  groupBy = "Grupo", # Agrupar filas por Grupo Étnico
+  pagination = FALSE, # Mostrar todo en una sola vista (scroll si es necesario)
+  highlight = TRUE,
+  striped = TRUE,
+  compact = TRUE,
+  defaultExpanded = TRUE, # Expandir los grupos por defecto
+  
+  # Estilo del tema
+  theme = reactableTheme(
+    style = list(fontFamily = "Roboto, Arial, sans-serif", fontSize = "13px", color = text_color),
+    borderColor = "#dfe2e5",
+    stripedColor = "#f6f8fa",
+    headerStyle = list(
+      backgroundColor = "#ffffff",
+      borderBottom = "2px solid #090d81", # Borde azul oscuro corporativo
+      textTransform = "uppercase",
+      fontWeight = "bold",
+      fontSize = "12px",
+      color = "#090d81"
+    ),
+    groupHeaderStyle = list(
+      backgroundColor = "#f0f0f0",
+      fontWeight = "bold",
+      color = "#000"
+    )
+  ),
+  
+  # Definición de columnas
+  columns = list(
+    Grupo = colDef(
+      name = "Grupo Étnico",
+      minWidth = 150
+    ),
+    Tipo = colDef(
+      name = "Tipo de Hipertensión",
+      minWidth = 220,
+      style = list(fontWeight = "500")
+    ),
+    # Aplicar barras de datos a cada año
+    `2019` = colDef(cell = data_bars(data_table, fill_color = bar_color, background = "transparent", text_position = "outside-end", number_fmt = scales::comma, box_shadow = TRUE)),
+    `2020` = colDef(cell = data_bars(data_table, fill_color = bar_color, background = "transparent", text_position = "outside-end", number_fmt = scales::comma, box_shadow = TRUE)),
+    `2021` = colDef(cell = data_bars(data_table, fill_color = bar_color, background = "transparent", text_position = "outside-end", number_fmt = scales::comma, box_shadow = TRUE)),
+    `2022` = colDef(cell = data_bars(data_table, fill_color = bar_color, background = "transparent", text_position = "outside-end", number_fmt = scales::comma, box_shadow = TRUE)),
+    `2023` = colDef(cell = data_bars(data_table, fill_color = bar_color, background = "transparent", text_position = "outside-end", number_fmt = scales::comma, box_shadow = TRUE)),
+    `2024` = colDef(cell = data_bars(data_table, fill_color = bar_color, background = "transparent", text_position = "outside-end", number_fmt = scales::comma, box_shadow = TRUE)),
+    `2025` = colDef(cell = data_bars(data_table, fill_color = bar_color, background = "transparent", text_position = "outside-end", number_fmt = scales::comma, box_shadow = TRUE))
+  )
+) %>%
+  # Añadir título y pie de página al contenedor HTML
+  div(style = "font-family: 'Roboto', sans-serif; max-width: 100%; margin: 0 auto;") %>%
+  tagList(
+    h3("Tipos de enfermedades hipertensivas en poblaciones amazónicas, andinas y afroperuana 2019-2025", 
+       style = "color: #090d81; font-weight: bold; margin-bottom: 10px; font-size: 18px;"),
+    .,
+    div(
+      style = "font-size: 11px; color: #666; margin-top: 15px; border-top: 1px solid #ccc; padding-top: 5px;",
+      p(HTML("<b>Fuente:</b> HIS MINSA<br><b>Elaboración:</b> Centro Nacional de Investigación Social e Interculturalidad en Salud"))
+    )
+  )
+```
+
+## Data Fuente
+
+```{r}
+make_download_table(data_table, filename_label = "data_table")
+```
+:::
+
+## **Enfermedades hipertensivas por etnias 2019-2025**
+
+Los quechuas son quienes tienen los mayores registros de hipertensión en todo el periodo analizado. Va seguido de los Kichwa, Kukama Kukamiria, Awajún, Aimara, Ashaninka y Shipibo- Konibo
+
+::: panel-tabset
+## Tabla dinamica
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-align: "center"
+
+library(tidyverse)
+library(reactable)
+library(reactablefmtr)
+library(htmltools)
+library(scales)
+library(sparkline)
+# --- 1. CARGA Y LIMPIEZA DE DATOS ---
+data_raw <- read_csv("data-tnrZg.csv", show_col_types = FALSE, col_types = cols(.default = "c"))
+
+data_clean <- data_raw %>%
+  select(Etnia, `2019`, `2020`, `2021`, `2022`, `2023`, `2024`, `2025`) %>%
+  mutate(across(`2019`:`2025`, function(x) {
+    x_clean <- str_remove_all(x, "[, ]")
+    x_clean <- ifelse(x_clean == "-" | x_clean == "", NA, x_clean)
+    as.numeric(x_clean)
+  })) %>%
+  mutate(across(where(is.numeric), ~replace_na(., 0)))
+
+# 2. CREAR COLUMNA TENDENCIA (Lista de valores)
+data_final <- data_clean %>%
+  rowwise() %>%
+  mutate(Trend = list(c_across(`2019`:`2025`))) %>%
+  ungroup()
+
+# 3. CONFIGURACIÓN DEL HEATMAP
+dw_colors <- c("#fcfcbe", "#fdc78d", "#fb8d67", "#e45563", "#ac337b", "#6b1f7b", "#2c1160")
+rango_global <- range(data_final %>% select(`2019`:`2025`), na.rm = TRUE)
+col_fun <- col_numeric(palette = dw_colors, domain = rango_global, na.color = "#f9f9f9")
+
+estilo_heatmap <- function(value) {
+  if (is.na(value)) return(list(background = "#f9f9f9"))
+  bg_color <- col_fun(value)
+  umbral_texto_blanco <- quantile(rango_global, 0.6) 
+  text_color <- if (value > umbral_texto_blanco) "#ffffff" else "#000000"
+  list(background = bg_color, color = text_color, fontWeight = "400")
+}
+
+# 4. TABLA REACTABLE CON SPARKLINE (VERSIÓN ROBUSTA)
+tabla_final <- reactable(
+  data_final,
+  pagination = FALSE,
+  highlight = TRUE,
+  compact = TRUE,
+  searchable = TRUE,
+  defaultSorted = "2019",
+  defaultSortOrder = "desc",
+  
+  theme = reactableTheme(
+    style = list(fontFamily = "Roboto, Arial, sans-serif", fontSize = "13px"),
+    headerStyle = list(
+      backgroundColor = "#ffffff",
+      borderBottom = "2px solid #333",
+      textTransform = "uppercase",
+      fontWeight = "bold",
+      fontSize = "12px",
+      color = "#333"
+    )
+  ),
+  
+  columns = list(
+    Etnia = colDef(
+      name = "ETNIAS",
+      minWidth = 130,
+      style = list(fontWeight = "bold", borderRight = "1px solid #eee", backgroundColor = "#fff"),
+      sticky = "left"
+    ),
+    `2019` = colDef(style = estilo_heatmap, format = colFormat(separators = TRUE), minWidth = 60, align = "center"),
+    `2020` = colDef(style = estilo_heatmap, format = colFormat(separators = TRUE), minWidth = 60, align = "center"),
+    `2021` = colDef(style = estilo_heatmap, format = colFormat(separators = TRUE), minWidth = 60, align = "center"),
+    `2022` = colDef(style = estilo_heatmap, format = colFormat(separators = TRUE), minWidth = 60, align = "center"),
+    `2023` = colDef(style = estilo_heatmap, format = colFormat(separators = TRUE), minWidth = 60, align = "center"),
+    `2024` = colDef(style = estilo_heatmap, format = colFormat(separators = TRUE), minWidth = 60, align = "center"),
+    `2025` = colDef(style = estilo_heatmap, format = colFormat(separators = TRUE), minWidth = 60, align = "center"),
+    
+    # --- AQUÍ ESTÁ EL CAMBIO IMPORTANTE ---
+    # Usamos la librería 'sparkline' directamente, sin depender de 'dataui'
+    Trend = colDef(
+      name = "Tendencia",
+      minWidth = 100,
+      align = "center",
+      cell = function(value, index) {
+        sparkline(
+          data_final$Trend[[index]], 
+          type = "line", 
+          width = 100, 
+          height = 25,
+          lineColor = "#1d81a2", 
+          fillColor = FALSE, 
+          lineWidth = 2,
+          spotColor = FALSE, 
+          minSpotColor = FALSE, 
+          maxSpotColor = "#1d81a2", # Resalta el pico máximo
+          lastSpotColor = "#1d81a2", # Resalta el último valor (punto final)
+          spotRadius = 3,
+          tooltipChartTitle = "Tendencia",
+          disableInteraction = FALSE # Permite ver valores al pasar el mouse
+        )
+      }
+    )
+  )
+)
+
+# 5. RENDERIZADO
+# Necesario para activar las dependencias JS de sparkline en el HTML final
+browsable(
+  tagList(
+    tags$head(tags$style(".jqsfield { font-family: 'Roboto', sans-serif; }")), # Estilo tooltip
+    div(
+      style = "font-family: 'Roboto', sans-serif; max-width: 950px; margin: 0 auto;",
+      h3("", 
+         style = "margin-bottom: 5px; font-weight: 700; font-size: 20px; color: #333;"),
+      div(style = "margin-bottom: 10px;", tabla_final),
+      div(
+        style = "border-top: 1px solid #ccc; padding-top: 10px; font-size: 11px; color: #666; line-height: 1.4;",
+        p(style = "margin: 0 0 5px;", "Considera establecimientos MINSA, EsSalud, FFAA y privados."),
+        div(
+          style = "display: flex; justify-content: space-between; margin-top: 10px;",
+          span(strong("Fuente: "), "HIS MINSA"),
+          span(strong("Gráfico: "), "CENSI")
+        )
+      )
+    )
+  )
+)
+```
+
+## Data Fuente
+
+```{r}
+make_download_table(data_clean, filename_label = "Hipertension_etnias")
+```
+:::
+
+## **Enfermedades hipertensivas en la poblaciones amazónicas, andinas y afroperuana, por sexo 2019-2025**
+
+Por sexo, las enfermedades hipertensivas, afectan más a las mujeres. En las poblaciones amazónicas oscila entre el 59% al 61%. En las poblaciones andinas es ligeramente mayor, entre 60 y 63%. En las poblaciones afroperuanas, hasta mayo del 2023 va un mayor registro en casos de hombres.
+
+::: panel-tabset
+## Grafico
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-align: "center"
+#| fig-height: 8
+#| dev: "svg"
+
+options(bitmapType = 'cairo')
+
+library(tidyverse)
+library(plotly)
+library(scales)
+
+# 1. CARGA DE DATOS
+data_raw <- read_csv("data-DPMiD.csv", show_col_types = FALSE)
+
+# 2. TRANSFORMACIÓN
+data_pyramid <- data_raw %>%
+  rename(Grupo = `Grupo étnico`, Anio = `Año`) %>%
+  pivot_longer(cols = c("F", "M"), names_to = "Sexo", values_to = "Casos") %>%
+  mutate(
+    Valor_Plot = ifelse(Sexo == "M", -Casos, Casos),
+    Sexo_Label = ifelse(Sexo == "M", "Hombre", "Mujer"),
+    Tooltip_Text = paste0("<b>", Grupo, "</b><br>",
+                          "Año: ", Anio, "<br>",
+                          "Sexo: ", Sexo_Label, "<br>",
+                          "Casos: ", format(Casos, big.mark = ","))
+  )
+
+# 3. ESTANDARIZACIÓN DEL EJE 0 (Simetría)
+# Calculamos el valor máximo absoluto por grupo para forzar límites simétricos
+dummy_ranges <- data_pyramid %>%
+  group_by(Grupo) %>%
+  summarise(Max_Val = max(abs(Casos))) %>%
+  # Creamos dos filas por grupo: +Max y -Max
+  crossing(Signo = c(-1, 1)) %>%
+  mutate(
+    Valor_Plot = Max_Val * Signo * 1.1, # Un 10% extra de margen
+    Sexo = NA, # Para que no salga en la leyenda
+    Anio = 2019 # Año dummy para que ggplot no se queje
+  )
+
+# 4. COLORES
+cols_sexo <- c("M" = "#c8da2d", "F" = "#abf375")
+
+# 5. GRÁFICO
+p <- ggplot(data_pyramid, aes(x = as.factor(Anio), y = Valor_Plot, fill = Sexo)) +
+  # Barras reales
+  geom_col(aes(text = Tooltip_Text), width = 0.8) +
+  # Puntos invisibles para forzar la escala simétrica
+  geom_point(data = dummy_ranges, aes(y = Valor_Plot), alpha = 0, inherit.aes = FALSE, x = 1) +
+  
+  coord_flip() +
+  facet_wrap(~Grupo, ncol = 1, scales = "free_x") +
+  
+  scale_fill_manual(values = cols_sexo, labels = c("M" = "Hombre", "F" = "Mujer")) +
+  
+  # Etiquetas de eje simétricas y positivas
+  scale_y_continuous(labels = function(x) comma(abs(x))) +
+  
+  labs(x = "", y = "Número de casos", fill = "") +
+  theme_minimal() +
+  theme(
+    # Leyenda abajo
+    legend.position = "bottom",
+    legend.justification = "center",
+    strip.text = element_text(face = "bold", size = 12, color = "#333", hjust = 0),
+    panel.grid.major.y = element_blank(),
+    axis.text.y = element_text(size = 10, face = "bold")
+  )
+
+# 6. INTERACTIVIDAD
+ggplotly(p, tooltip = "text") %>%
+  layout(
+    title = list(
+      text = "",
+      font = list(size = 18, color = "#090d81"),
+      y = 0.97
+    ),
+    margin = list(t = 80, b = 60),
+    # Configuración de leyenda en Plotly (abajo y horizontal)
+    legend = list(
+      orientation = "h", 
+      x = 0.5, 
+      y = -0.1, 
+      xanchor = "center"
+    ),
+    plot_bgcolor = "#ffffff",
+    paper_bgcolor = "#ffffff"
+  ) %>%
+  config(responsive = TRUE, displayModeBar = FALSE)
+```
+
+## Data Fuente
+
+```{r}
+make_download_table(data_raw, filename_label = "Hipertension_etnias_sexo_2019_2025")
+```
+:::
+
+## **Enfermedades hipertensivas en la poblaciones amazónicas, andinas y afroperuana por curso de vida 2019-2025**
+
+En las poblaciones amazónicas, afecta más al curso de vida de 30 a 59 años, seguido de los adultos mayores. En las poblaciones andinas y afroperuano son mayore los registros de casos en adultos mayores, más del 70% en los andinos y en los afroperuanos oscila entre 43% y 67%.
+
+::: panel-tabset
+## Tabla Dinámica
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-align: "center"
+
+library(tidyverse)
+library(reactable)
+library(reactablefmtr)
+library(htmltools)
+library(scales)
+
+# 1. CARGA Y LIMPIEZA DE DATOS
+# Leemos definiendo los NAs para limpiar caracteres extraños
+data_raw <- read_csv("data-C83xu.csv", 
+                     show_col_types = FALSE, 
+                     na = c("", "NA", "NaN", "-", "null"),
+                     col_types = cols(.default = "c"))
+
+data_table <- data_raw %>%
+  # Renombrar para facilitar
+  rename(Grupo = `Grupo étnico`) %>%
+  # Quitamos las filas de "Total general" ya que la tabla agrupará y sumará automáticamente si se requiere,
+  # o simplemente mostramos el desglose.
+  filter(!str_detect(Etapa, "Total")) %>%
+  # Limpieza de números en columnas de años
+  mutate(across(matches("^20"), ~ {
+    x <- str_remove_all(., ",")
+    as.numeric(x)
+  })) %>%
+  # Reemplazar NAs con 0
+  mutate(across(matches("^20"), ~replace_na(., 0))) %>%
+  # Ordenar las etapas de vida lógicamente (no alfabéticamente)
+  mutate(Etapa = factor(Etapa, levels = c(
+    "< 01m", "01-11m", "01-05a", "06-11a", "12-17a", "18-29a", "30-59a", "60a >"
+  ))) %>%
+  arrange(Grupo, Etapa) %>%
+  # Seleccionar columnas
+  select(Grupo, Etapa, `2019`, `2020`, `2021`, `2022`, `2023`, `2024`, `2025`)
+
+# 2. ESTILOS (Estilo Corporativo / Datawrapper)
+bar_color <- "#18a1cd" # Azul corporativo
+text_color <- "#333333"
+
+# 3. CREACIÓN DE LA TABLA
+reactable(
+  data_table,
+  groupBy = "Grupo",     # Agrupar por Grupo Étnico
+  pagination = FALSE,    # Ver todo en una sola página
+  highlight = TRUE,
+  compact = TRUE,
+  striped = TRUE,
+  defaultExpanded = TRUE, # Grupos abiertos por defecto
+  
+  # Tema visual
+  theme = reactableTheme(
+    style = list(fontFamily = "Roboto, Arial, sans-serif", fontSize = "13px", color = text_color),
+    borderColor = "#dfe2e5",
+    headerStyle = list(
+      backgroundColor = "#ffffff",
+      borderBottom = "2px solid #090d81", # Línea azul fuerte
+      textTransform = "uppercase",
+      fontWeight = "700",
+      fontSize = "12px",
+      color = "#333"
+    ),
+    groupHeaderStyle = list(
+      backgroundColor = "#f3f3f3",
+      fontWeight = "bold",
+      color = "#090d81", # Resaltar el grupo étnico
+      borderTop = "1px solid #ccc"
+    )
+  ),
+  
+  # Columnas
+  columns = list(
+    Grupo = colDef(
+      name = "Grupo Étnico",
+      minWidth = 150
+    ),
+    Etapa = colDef(
+      name = "Etapa de Vida",
+      minWidth = 140,
+      style = list(fontWeight = "500")
+    ),
+    # Barras de datos para cada año
+    `2019` = colDef(cell = data_bars(data_table, fill_color = bar_color, background = "transparent", text_position = "outside-end", number_fmt = scales::comma, box_shadow = FALSE)),
+    `2020` = colDef(cell = data_bars(data_table, fill_color = bar_color, background = "transparent", text_position = "outside-end", number_fmt = scales::comma, box_shadow = FALSE)),
+    `2021` = colDef(cell = data_bars(data_table, fill_color = bar_color, background = "transparent", text_position = "outside-end", number_fmt = scales::comma, box_shadow = FALSE)),
+    `2022` = colDef(cell = data_bars(data_table, fill_color = bar_color, background = "transparent", text_position = "outside-end", number_fmt = scales::comma, box_shadow = FALSE)),
+    `2023` = colDef(cell = data_bars(data_table, fill_color = bar_color, background = "transparent", text_position = "outside-end", number_fmt = scales::comma, box_shadow = FALSE)),
+    `2024` = colDef(cell = data_bars(data_table, fill_color = bar_color, background = "transparent", text_position = "outside-end", number_fmt = scales::comma, box_shadow = FALSE)),
+    `2025` = colDef(cell = data_bars(data_table, fill_color = bar_color, background = "transparent", text_position = "outside-end", number_fmt = scales::comma, box_shadow = FALSE))
+  )
+) %>%
+  # Contenedor con Título
+  div(style = "font-family: 'Roboto', sans-serif; max-width: 100%; margin: 0 auto;") %>%
+  tagList(
+    h3("Hipertensión por etapa de vida en poblaciones amazónicas, andinas y afroperuana 2019-2025", 
+       style = "color: #090d81; font-weight: bold; margin-bottom: 10px; font-size: 18px; margin-top: 0;"),
+    .,
+    div(
+      style = "font-size: 11px; color: #666; margin-top: 15px; border-top: 1px solid #ccc; padding-top: 5px;",
+      p(HTML("<b>Fuente:</b> HIS MINSA<br><b>Elaboración:</b> Centro Nacional de Investigación Social e Interculturalidad en Salud"))
+    )
+  )
+
+```
+
+## Data Fuente
+
+```{r}
+
+make_download_table(data_table, filename_label = "hipertension_Por_Edad_2019_2025")
+```
+:::
+
+## **Enfermedades hipertensivas en población afroperuana por departamento 2019-2025**
+
+::: panel-tabset
+## Mapa
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-height: 6
+
+library(tidyverse)
+library(plotly)
+library(sf)
+library(jsonlite)
+
+# 1. CARGA DE MAPA BASE
+# Intentamos cargar el GeoJSON local
+geojson_peru <- tryCatch({
+  jsonlite::fromJSON("peru_departamental_simple.geojson", simplifyVector = FALSE)
+}, error = function(e) { stop("Error: Asegúrate de tener 'peru_departamental_simple.geojson' en la carpeta.") })
+
+# Para nombres oficiales y estructura
+mapa_sf <- tryCatch({
+  st_read("peru_departamental_simple.geojson", quiet = TRUE)
+}, error = function(e) { NULL })
+
+# 2. DATOS RECONSTRUIDOS (Población Afroperuana)
+# Nota: Se ha incluido 2023 con valor 0 para continuidad en la animación
+csv_data_afro <- "Departamento,2019,2020,2021,2022,2023,2024,2025
+AMAZONAS,0,0,1,0,0,0,0
+ANCASH,0,0,0,0,0,1,0
+APURIMAC,0,3,0,1,0,0,0
+AREQUIPA,1,0,2,1,0,1,1
+AYACUCHO,0,0,0,0,0,1,0
+CAJAMARCA,0,0,0,1,0,2,1
+CALLAO,0,0,0,0,0,0,4
+CUSCO,0,0,1,0,0,1,0
+HUANCAVELICA,0,0,0,0,0,0,0
+HUANUCO,0,0,2,0,0,0,1
+ICA,6,11,11,18,0,6,7
+JUNIN,0,0,0,1,0,0,0
+LA LIBERTAD,0,0,2,2,0,1,0
+LAMBAYEQUE,0,0,2,6,0,13,20
+LIMA,1,1,3,2,0,6,9
+LORETO,7,4,1,4,0,1,2
+MADRE DE DIOS,0,0,0,0,0,3,0
+MOQUEGUA,0,0,0,0,0,0,0
+PASCO,1,1,0,1,0,0,0
+PIURA,19,35,48,42,0,24,20
+PUNO,0,0,0,0,0,0,0
+SAN MARTIN,0,0,1,0,0,0,0
+TACNA,0,0,0,0,0,0,0
+TUMBES,0,0,0,5,0,0,10
+UCAYALI,0,0,0,1,0,0,0"
+
+data_afro_raw <- read.csv(text = csv_data_afro, check.names = FALSE)
+
+# 3. PREPARACIÓN DE DATOS
+data_casos <- data_afro_raw %>%
+  pivot_longer(cols = -Departamento, names_to = "Anio", values_to = "Casos") %>%
+  mutate(Anio = as.integer(Anio))
+
+# Aseguramos que todos los deptos del mapa existan en los datos para cada año
+deptos_mapa <- unique(mapa_sf$NOMBDEP)
+anios_data <- unique(data_casos$Anio)
+
+data_final <- expand.grid(NOMBDEP = deptos_mapa, Anio = anios_data) %>%
+  left_join(data_casos, by = c("NOMBDEP" = "Departamento", "Anio")) %>%
+  mutate(
+    # Convertimos 0 a NA para que el mapa base gris se vea en regiones sin casos
+    Casos_Plot = if_else(is.na(Casos) | Casos == 0, NA_real_, Casos),
+    Texto = paste0("<b>", NOMBDEP, "</b><br>Año: ", Anio, "<br>Casos: ", replace_na(Casos, 0))
+  ) %>%
+  arrange(Anio, NOMBDEP)
+
+# 4. MAPA INTERACTIVO CON PLOTLY
+plot_ly() %>%
+  
+  # CAPA 1: FONDO (Mapa base gris para departamentos sin datos)
+  add_trace(
+    type = "choropleth",
+    geojson = geojson_peru,
+    locations = mapa_sf$NOMBDEP,
+    z = rep(1, nrow(mapa_sf)),
+    featureidkey = "properties.NOMBDEP",
+    colorscale = list(c(0, 1), c("#eeeeee", "#eeeeee")),
+    showscale = FALSE,
+    marker = list(line = list(width = 0.5, color = "white")),
+    hoverinfo = "text",
+    text = mapa_sf$NOMBDEP,
+    inherit = FALSE
+  ) %>%
+  
+  # CAPA 2: DATOS (Coropleta animada)
+  add_trace(
+    data = data_final,
+    type = "choropleth",
+    geojson = geojson_peru,
+    locations = ~NOMBDEP,
+    featureidkey = "properties.NOMBDEP",
+    z = ~Casos_Plot,
+    frame = ~Anio,
+    colorscale = "Oranges", # Paleta naranja para población andina
+    zmin = 1,
+    zmax = max(data_final$Casos, na.rm = TRUE),
+    marker = list(line = list(width = 0.5, color = "white")),
+    text = ~Texto,
+    hoverinfo = "text"
+  ) %>%
+  layout(
+    title = list(
+      text = " ",
+      font = list(size = 18, color = "#090d81"),
+      y = 0.95
+    ),
+    geo = list(
+      scope = 'south america',
+      showland = FALSE,
+      showcountries = FALSE,
+      showframe = FALSE,
+      showcoastlines = FALSE,
+      projection = list(type = 'mercator'),
+      # Centrado en Perú
+      center = list(lat = -9.5, lon = -75),
+      lataxis = list(range = c(-18.5, 0)),
+      lonaxis = list(range = c(-81.5, -68.5)),
+      bgcolor = "rgba(0,0,0,0)"
+    ),
+    margin = list(t = 60, l = 0, r = 0, b = 0),
+    # Fondo blanco limpio
+    paper_bgcolor = "#ffffff"
+  ) %>%
+  
+  animation_opts(
+    frame = 1500, 
+    transition = 700, 
+    redraw = TRUE
+  ) %>%
+  
+  animation_slider(
+    currentvalue = list(prefix = "Año: ", font = list(color = "#333"))
+  ) %>%
+  
+  colorbar(title = "N° Casos", x = 0.9)
+```
+
+## Data Fuente
+
+```{r}
+make_download_table(data_afro_raw, filename_label = "Hipertension_afroperuanos")
+```
+:::
+
+## **Enfermedades hipertensivas en poblaciones andinas por departamento (2019-2025)**
+
+::: panel-tabset
+## Mapa
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-height: 6
+
+library(tidyverse)
+library(plotly)
+library(sf)
+library(jsonlite)
+
+# 1. CARGA DE MAPA BASE
+geojson_peru <- tryCatch({
+  jsonlite::fromJSON("peru_departamental_simple.geojson", simplifyVector = FALSE)
+}, error = function(e) { stop("Error: 'peru_departamental_simple.geojson' no encontrado.") })
+
+mapa_sf <- tryCatch({
+  st_read("peru_departamental_simple.geojson", quiet = TRUE)
+}, error = function(e) { NULL })
+
+# 2. DATOS RECONSTRUIDOS (Población Andina)
+# Datos extraídos y limpiados del código Flourish proporcionado.
+# Nota: 2023 se ha rellenado con 0 para mantener la continuidad del slider.
+csv_data_andinos <- "Departamento,2019,2020,2021,2022,2023,2024,2025
+AMAZONAS,2,3,2,1,0,1,1
+ANCASH,362,339,439,370,0,555,546
+APURIMAC,5,7,10,14,0,27,52
+AREQUIPA,9,4,8,8,0,23,24
+AYACUCHO,925,445,549,542,0,317,205
+CAJAMARCA,3,6,16,10,0,10,8
+CALLAO,7,2,5,4,0,9,10
+CUSCO,31,26,41,40,0,146,142
+HUANCAVELICA,122,38,46,45,0,221,224
+HUANUCO,8,11,18,8,0,15,14
+ICA,2,1,8,11,0,6,4
+JUNIN,3,3,0,4,0,11,78
+LA LIBERTAD,0,0,0,3,0,2,0
+LAMBAYEQUE,2,3,9,6,0,15,50
+LIMA,66,31,56,138,0,105,96
+LORETO,5,1,5,8,0,3,7
+MADRE DE DIOS,0,1,2,0,0,2,2
+MOQUEGUA,4,1,1,1,0,4,6
+PASCO,3,2,2,2,0,3,1
+PIURA,1,2,2,2,0,6,3
+PUNO,372,239,324,259,0,168,159
+SAN MARTIN,1,3,6,5,0,1,3
+TACNA,6,3,3,1,0,18,20
+TUMBES,0,0,2,0,0,1,0
+UCAYALI,2,2,2,4,0,9,9"
+
+data_andinos_raw <- read.csv(text = csv_data_andinos, check.names = FALSE)
+
+# 3. PREPARACIÓN DE DATOS
+data_casos <- data_andinos_raw %>%
+  pivot_longer(cols = -Departamento, names_to = "Anio", values_to = "Casos") %>%
+  mutate(Anio = as.integer(Anio))
+
+# Asegurar cobertura completa del mapa
+deptos_mapa <- unique(mapa_sf$NOMBDEP)
+anios_data <- unique(data_casos$Anio)
+
+data_final <- expand.grid(NOMBDEP = deptos_mapa, Anio = anios_data) %>%
+  left_join(data_casos, by = c("NOMBDEP" = "Departamento", "Anio")) %>%
+  mutate(
+    # Convertir 0 a NA para transparencia del mapa base
+    Casos_Plot = if_else(is.na(Casos) | Casos == 0, NA_real_, Casos),
+    Texto = paste0("<b>", NOMBDEP, "</b><br>Año: ", Anio, "<br>Casos: ", replace_na(Casos, 0))
+  ) %>%
+  arrange(Anio, NOMBDEP)
+
+# 4. MAPA INTERACTIVO CON PLOTLY
+plot_ly() %>%
+  
+  # CAPA 1: FONDO GRIS
+  add_trace(
+    type = "choropleth",
+    geojson = geojson_peru,
+    locations = mapa_sf$NOMBDEP,
+    z = rep(1, nrow(mapa_sf)),
+    featureidkey = "properties.NOMBDEP",
+    colorscale = list(c(0, 1), c("#eeeeee", "#eeeeee")),
+    showscale = FALSE,
+    marker = list(line = list(width = 0.5, color = "white")),
+    hoverinfo = "text",
+    text = mapa_sf$NOMBDEP,
+    inherit = FALSE
+  ) %>%
+  
+  # CAPA 2: DATOS (Naranjas)
+  add_trace(
+    data = data_final,
+    type = "choropleth",
+    geojson = geojson_peru,
+    locations = ~NOMBDEP,
+    featureidkey = "properties.NOMBDEP",
+    z = ~Casos_Plot,
+    frame = ~Anio,
+    colorscale = "Oranges", # Paleta naranja para población andina
+    zmin = 1,
+    zmax = max(data_final$Casos, na.rm = TRUE),
+    marker = list(line = list(width = 0.5, color = "white")),
+    text = ~Texto,
+    hoverinfo = "text"
+  ) %>%
+  
+  layout(
+    title = list(
+      text = "",
+      font = list(size = 18, color = "#d35400"), # Título naranja oscuro
+      y = 0.95
+    ),
+    geo = list(
+      scope = 'south america',
+      showland = FALSE,
+      showcountries = FALSE,
+      showframe = FALSE,
+      showcoastlines = FALSE,
+      projection = list(type = 'mercator'),
+      center = list(lat = -9.5, lon = -75),
+      lataxis = list(range = c(-18.5, 0)),
+      lonaxis = list(range = c(-81.5, -68.5)),
+      bgcolor = "rgba(0,0,0,0)"
+    ),
+    margin = list(t = 60, l = 0, r = 0, b = 0),
+    paper_bgcolor = "#ffffff"
+  ) %>%
+  
+  animation_opts(
+    frame = 1500, 
+    transition = 700, 
+    redraw = TRUE
+  ) %>%
+  
+  animation_slider(
+    currentvalue = list(prefix = "Año: ", font = list(color = "#333"))
+  ) %>%
+  
+  colorbar(title = "N° Casos", x = 0.9)
+```
+
+## Data Fuente
+
+```{r}
+make_download_table(data_andinos_raw, filename_label = "Hipertension_andinos")
+```
+:::
+
+## **Enfermedades hipertensivas en poblaciones amazónicas por departamento 2019-2025**
+
+::: panel-tabset
+## Mapa
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-height: 6
+
+library(tidyverse)
+library(plotly)
+library(sf)
+library(jsonlite)
+
+# 1. CARGA DE MAPA BASE
+geojson_peru <- tryCatch({
+  jsonlite::fromJSON("peru_departamental_simple.geojson", simplifyVector = FALSE)
+}, error = function(e) { stop("Error: 'peru_departamental_simple.geojson' no encontrado.") })
+
+mapa_sf <- tryCatch({
+  st_read("peru_departamental_simple.geojson", quiet = TRUE)
+}, error = function(e) { NULL })
+
+# 2. DATOS RECONSTRUIDOS (Población Amazónica)
+# Datos extraídos y limpiados del código Flourish proporcionado.
+# Nota: Loreto presenta los valores más altos, superando los 1000 casos en varios años.
+csv_data_amazonicos <- "Departamento,2019,2020,2021,2022,2023,2024,2025
+AMAZONAS,192,250,289,286,54,270,225
+ANCASH,2,1,2,7,1,557,546
+APURIMAC,2,7,3,2,3,29,54
+AREQUIPA,3,5,6,4,0,29,30
+AYACUCHO,7,0,7,3,1,353,232
+CAJAMARCA,27,13,10,8,3,33,32
+CALLAO,0,0,0,3,1,12,11
+CUSCO,49,60,110,51,12,200,171
+HUANCAVELICA,0,0,0,0,2,222,226
+HUANUCO,13,17,29,14,8,33,32
+ICA,2,2,0,3,3,11,6
+JUNIN,49,55,63,76,27,131,163
+LA LIBERTAD,0,4,6,10,3,6,5
+LAMBAYEQUE,36,5,7,20,4,30,57
+LIMA,12,15,22,40,18,134,146
+LORETO,923,754,1206,1370,459,1630,1420
+MADRE DE DIOS,25,32,31,32,9,26,18
+MOQUEGUA,0,0,2,0,0,4,6
+PASCO,121,113,106,105,31,67,68
+PIURA,4,5,7,4,2,16,7
+PUNO,2,1,1,0,0,168,161
+SAN MARTIN,46,40,214,131,56,195,153
+TACNA,0,0,1,1,0,18,21
+TUMBES,1,0,2,1,2,8,3
+UCAYALI,236,197,218,364,139,301,259"
+
+data_amazonicos_raw <- read.csv(text = csv_data_amazonicos, check.names = FALSE)
+
+# 3. PREPARACIÓN DE DATOS
+data_casos <- data_amazonicos_raw %>%
+  pivot_longer(cols = -Departamento, names_to = "Anio", values_to = "Casos") %>%
+  mutate(Anio = as.integer(Anio))
+
+# Asegurar cobertura completa del mapa
+deptos_mapa <- unique(mapa_sf$NOMBDEP)
+anios_data <- unique(data_casos$Anio)
+
+data_final <- expand.grid(NOMBDEP = deptos_mapa, Anio = anios_data) %>%
+  left_join(data_casos, by = c("NOMBDEP" = "Departamento", "Anio")) %>%
+  mutate(
+    # Convertir 0 a NA para transparencia del mapa base
+    Casos_Plot = if_else(is.na(Casos) | Casos == 0, NA_real_, Casos),
+    Texto = paste0("<b>", NOMBDEP, "</b><br>Año: ", Anio, "<br>Casos: ", replace_na(Casos, 0))
+  ) %>%
+  arrange(Anio, NOMBDEP)
+
+# 4. MAPA INTERACTIVO CON PLOTLY
+plot_ly() %>%
+  
+  # CAPA 1: FONDO GRIS
+  add_trace(
+    type = "choropleth",
+    geojson = geojson_peru,
+    locations = mapa_sf$NOMBDEP,
+    z = rep(1, nrow(mapa_sf)),
+    featureidkey = "properties.NOMBDEP",
+    colorscale = list(c(0, 1), c("#eeeeee", "#eeeeee")),
+    showscale = FALSE,
+    marker = list(line = list(width = 0.5, color = "white")),
+    hoverinfo = "text",
+    text = mapa_sf$NOMBDEP,
+    inherit = FALSE
+  ) %>%
+  
+  # CAPA 2: DATOS (Rojos)
+  add_trace(
+    data = data_final,
+    type = "choropleth",
+    geojson = geojson_peru,
+    locations = ~NOMBDEP,
+    featureidkey = "properties.NOMBDEP",
+    z = ~Casos_Plot,
+    frame = ~Anio,
+    colorscale = "Reds", # Paleta roja para población amazónica
+    zmin = 1,
+    zmax = max(data_final$Casos, na.rm = TRUE),
+    marker = list(line = list(width = 0.5, color = "white")),
+    text = ~Texto,
+    hoverinfo = "text"
+  ) %>%
+  
+  layout(
+    title = list(
+      text = "",
+      font = list(size = 18, color = "#a50026"), # Título rojo oscuro
+      y = 0.95
+    ),
+    geo = list(
+      scope = 'south america',
+      showland = FALSE,
+      showcountries = FALSE,
+      showframe = FALSE,
+      showcoastlines = FALSE,
+      projection = list(type = 'mercator'),
+      center = list(lat = -9.5, lon = -75),
+      lataxis = list(range = c(-18.5, 0)),
+      lonaxis = list(range = c(-81.5, -68.5)),
+      bgcolor = "rgba(0,0,0,0)"
+    ),
+    margin = list(t = 60, l = 0, r = 0, b = 0),
+    paper_bgcolor = "#ffffff"
+  ) %>%
+  
+  animation_opts(
+    frame = 1500, 
+    transition = 700, 
+    redraw = TRUE
+  ) %>%
+  
+  animation_slider(
+    currentvalue = list(prefix = "Año: ", font = list(color = "#333"))
+  ) %>%
+  
+  colorbar(title = "N° Casos", x = 0.9)
+```
+
+## Data Fuente
+
+```{r}
+make_download_table(data_amazonicos_raw, filename_label = "Hipertension_amazonicos")
+
+```
+:::
