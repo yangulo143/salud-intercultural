@@ -1,0 +1,1193 @@
+---
+title: "El dengue en poblaciones indígenas y la población afroperuana"
+subtitle: "Análisis de datos del Ministerio de Salud (MINSA)"
+date: last-modified
+author: "Subdirección de Medicina Tradicional, Interculturalidad e Investigación Social (SUMTIS-CENSI)"
+format: 
+  html:
+    theme: cosmo
+    toc: true
+    page-layout: full
+    code-fold: true
+execute:
+  warning: false
+  message: false
+footer: "Fuente de datos: Sistema HISS-MINSA | Fecha de corte: 03/2024"
+---
+
+El dengue es una infección vírica que se transmite por la picadura de mosquitos hembra infectadas, principalmente el zancudo Aedes aegypti.
+
+La alteración del clima agudiza los problemas de salud producido por los vectores, el aumento de la temperatura y el rango de expansión de enfermedades como el dengue. Este 2023 se ha tenido un año inusual con más calor y lluvias en la costa permitiendo criaderos y mayor población del vector. A esto se suma las condiciones de precariedad de hogares, especialmente, sin acceso a agua potable y las condicionas de almacenamiento que puede favorecer los criaderos de zancudos. Considerando que esta enfermedad es endémica en zonas de la costa norte y Amazonía peruana, aumentaron los casos y brotes por dengue.
+
+Ante esta situación, el gobierno amplió el estado de emergencia en 20 regiones del país (12 de mayo) tras el incremento de casos de dengue y el colapso de hospitales por el gran número de pacientes con esta enfermedad. Actualmente, el norte del país es el más afectado. Hasta la semana epidemiológica (SE) 18, se notificaron 72 163 casos entre confirmados y probables, con un promedio de 4009 casos por semanas. También se notificaron 79 defunciones (63 confirmadas por laboratorio y 16 se encuentran en investigación).
+
+Según la Organización Mundial de la Salud, la mayor parte de los casos no presentan síntomas. Si aparecen, se da entre 4 y 10 días después de la infección y duran de 2 a 7 día.
+
+-   fiebre elevada (40 °C/104 °F)
+
+-   dolor de cabeza muy intenso
+
+-   dolor detrás de los ojos
+
+-   dolores musculares y articulares
+
+-   náuseas
+
+-   vómitos
+
+-   agrandamiento de ganglios linfáticos
+
+-   sarpullido
+
+-   Los casos de dengue grave necesitan hospitalización, sus síntomas son:
+
+-   dolor abdominal intenso
+
+-   vómitos persistentes
+
+-   respiración acelerada
+
+-   hemorragias en las encías o la nariz
+
+-   cansancio
+
+-   agitación
+
+-   vómitos o heces con sangre
+
+-   sed intensa
+
+-   piel pálida y fría
+
+-   debilidad
+
+Para conocer los registros de casos dengue por pertenencia étnica, se analizó una de las fuentes de información que registra las atenciones, la data del HIS MINSA, desde el 2019 hasta la primera semana de mayo del 2023.
+
+## **Poblaciones con dengue según autoidentificación étnica 2019-2023**
+
+Los mestizos tienen el 98% de los casos registrados en hipertensión en el periodo analizado. En las poblaciones amazónicas y andinas 1%, respectivamente.
+
+::: panel-tabset
+## Grafico
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 12
+#| fig-height: 4
+
+library(highcharter)
+library(tidyverse)
+library(htmltools)
+library(DT)
+
+# --- FUNCIÓN AUXILIAR PARA TABLAS DE DESCARGA ---
+# Esta función crea estandariza el botón de Excel para todos los gráficos
+make_download_table <- function(data_input, filename_label = "datos") {
+  datatable(
+    data_input,
+    extensions = 'Buttons',
+    rownames = FALSE,
+    options = list(
+      dom = 'Bfrtip',
+      buttons = list(
+        list(extend = 'excel', filename = filename_label, title = filename_label),
+        list(extend = 'csv', filename = filename_label)
+      ),
+      pageLength = 5, # Pocas filas para no ocupar mucho espacio
+      scrollX = TRUE,
+      language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')
+    )
+  )
+}
+
+
+
+# 1. DATOS
+csv_data <- "Grupo poblacional por etnicidad,2019,2020,2021,2022,2023
+Población afroperuana,1,1,19,22,69
+Poblaciones andinas,43,345,300,302,151
+Poblaciones amazónicas,283,705,1392,1743,913
+Mestizos,7212,25444,32508,43810,30107"
+
+# Definir el orden de los factores para que los colores siempre coincidan
+orden_grupos <- c("Mestizos", "Poblaciones amazónicas", "Poblaciones andinas", "Población afroperuana")
+
+data_pie <- read.csv(text = csv_data, check.names = FALSE) %>%
+  pivot_longer(cols = -`Grupo poblacional por etnicidad`, names_to = "Anio", values_to = "Casos") %>%
+  mutate(
+    `Grupo poblacional por etnicidad` = factor(`Grupo poblacional por etnicidad`, levels = orden_grupos)
+  ) %>%
+  arrange(Anio, `Grupo poblacional por etnicidad`) # IMPORTANTE: Ordenar para que los colores no se mezclen
+
+# 2. COLORES (Mapeo exacto)
+# Al ordenar los datos arriba, podemos pasar el vector de colores directamente
+cols_hc <- c("#f9faa9", "#09bb9f", "#74a3ff", "#333333") 
+
+# 3. CREAR LISTA DE GRÁFICOS
+plots_list <- data_pie %>%
+  group_split(Anio) %>%
+  map(function(df) {
+    anio <- unique(df$Anio)
+    
+    highchart() %>%
+      hc_chart(type = "pie", 
+               height = 200, # Altura fija pequeña para cada "pastel"
+               backgroundColor = "transparent",
+               spacing = c(0,0,0,0)) %>% 
+      hc_title(text = as.character(anio), 
+               verticalAlign = "top", 
+               align = "center",
+               style = list(fontSize = "14px", fontWeight = "bold")) %>%
+      hc_add_series(df, "pie", 
+                    hcaes(x = `Grupo poblacional por etnicidad`, y = Casos),
+                    innerSize = "60%", # Estilo Donut
+                    size = "80%",
+                    dataLabels = list(enabled = FALSE)) %>% # Desactivar etiquetas internas para limpieza visual en tamaño pequeño
+      hc_colors(cols_hc) %>%
+      hc_tooltip(pointFormat = "<b>{point.y}</b> casos<br>({point.percentage:.1f}%)") %>%
+      hc_plotOptions(pie = list(
+        allowPointSelect = TRUE,
+        cursor = 'pointer',
+        borderWidth = 1,
+        borderColor = "white"
+      ))
+  })
+
+# 4. RENDERIZADO TIPO "SMALL MULTIPLES" (FLEXBOX)
+# Esto reemplaza a hw_grid para asegurar que quepan 5 en fila
+browsable(
+  tagList(
+    # Título General
+    h3("Poblaciones con dengue según autoidentificación étnica 2019-2023", 
+       style = "text-align:center; font-family:sans-serif; color:#333; margin-bottom:20px;"),
+    
+    # Contenedor Flex para los gráficos
+    div(
+      style = "display: flex; flex-wrap: wrap; justify-content: center; width: 100%;",
+      lapply(plots_list, function(x) {
+        div(style = "width: 19%; min-width: 150px; box-sizing: border-box;", x)
+      })
+    ),
+    
+    # Leyenda Personalizada (HTML) para evitar repetición en cada gráfico
+    div(
+      style = "display: flex; justify-content: center; gap: 15px; margin-top: 10px; font-family: sans-serif; font-size: 12px;",
+      div(span(style=paste0("color:", cols_hc[1], "; font-size:15px;"), "●"), "Mestizos"),
+      div(span(style=paste0("color:", cols_hc[2], "; font-size:15px;"), "●"), "Amazónicas"),
+      div(span(style=paste0("color:", cols_hc[3], "; font-size:15px;"), "●"), "Andinas"),
+      div(span(style=paste0("color:", cols_hc[4], "; font-size:15px;"), "●"), "Afroperuana")
+    )
+  )
+)
+```
+
+## Data Fuente
+
+```{r}
+
+make_download_table(data_pie, filename_label = "data_pie")
+
+```
+:::
+
+## **Tendencia del dengue en poblaciones en poblaciones andinas y amazónicas y población afroperuana 2019-2023**
+
+En el caso de las poblaciones amazónicas, el 2019, el incremento se dio entre setiembre 2019 y octubre. El 2020, el incremento se inició también en setiembre y fue aumentando hasta enero del 2021, en octubre de ese mismo año nuevamente aumentó y se fue elevando hasta abril del 2022, en noviembre volvió a registrarse incremento de casos, elevándose hasta marzo del 2023.
+
+::: panel-tabset
+## Grafico
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-height: 5
+#| fig-width: 9
+
+library(tidyverse)
+library(plotly)
+
+# 1. DATOS
+data_lines <- read.csv("data-vB1D1.csv", check.names = FALSE) %>%
+  mutate(across(-`Población por etnicidad`, ~as.numeric(ifelse(. == "-", 0, .)))) %>%
+  mutate(Fecha = as.Date(`Población por etnicidad`, format = "%Y-%m-%d")) %>%
+  pivot_longer(cols = c(`Población afroperuana`, `Poblaciones andinas`, `Poblaciones amazónicas`),
+               names_to = "Etnia",
+               values_to = "Casos")
+
+# 2. COLORES
+colores_dw <- c(
+  "Poblaciones andinas" = "#74a3ff",
+  "Poblaciones amazónicas" = "#09bb9f",
+  "Población afroperuana" = "#333333"
+)
+
+# 3. TEXTO DEL PIE DE PÁGINA
+nota_pie <- paste0(
+  "Considera los establecimientos de salud del MINSA, EsSalud, FFAA y policiales y privados.<br>",
+  "Se incluye atenciones presenciales y no presenciales del 2021-2023.<br>",
+  "Se considera el tipo de diagnóstico definitivo.<br>",
+  "Comprende hasta la primera semana de mayo 2023."
+)
+
+# 4. GRÁFICO
+plot_ly(data_lines, x = ~Fecha, y = ~Casos, color = ~Etnia, colors = colores_dw,
+        type = 'scatter', mode = 'lines+markers',
+        hoverinfo = 'text',
+        text = ~paste("<b>", Etnia, "</b><br>",
+                      format(Fecha, "%b %Y"), "<br>",
+                      Casos, " casos"),
+        line = list(width = 2),
+        marker = list(size = 4)) %>%
+  layout(
+    title = list(
+      text = "",
+      font = list(size = 16),
+      y = 0.96
+    ),
+    xaxis = list(
+      title = "",
+      tickformat = "%Y",
+      dtick = "M12",
+      showgrid = FALSE
+    ),
+    yaxis = list(
+      title = "Número de casos",
+      gridcolor = "#eeeeee",
+      zeroline = FALSE
+    ),
+    legend = list(orientation = "h", x = 0.5, xanchor = "center", y = 1.05), # Leyenda arriba
+    
+    # AGREGAR NOTA AL PIE
+    annotations = list(
+      list(
+        x = 0, 
+        y = -0.15, # Posición vertical debajo del eje X
+        text = nota_pie,
+        showarrow = FALSE,
+        xref = 'paper',
+        yref = 'paper',
+        xanchor = 'left',
+        yanchor = 'top',
+        align = 'left',
+        font = list(size = 11, color = "#666666")
+      )
+    ),
+    # Aumentar margen inferior (b) para que quepa el texto
+    margin = list(t = 80, b = 130, l = 50, r = 20), 
+    hovermode = "x unified"
+  )
+```
+
+## Data Fuente
+
+```{r}
+make_download_table(data_lines, filename_label = "data_lines")
+```
+:::
+
+## **Dengue en pueblos amazónicos y andinos y en población afroperuana 2019-2023**
+
+En el 2019, los secoya y kiwcha tuvieron mayor registro de casos, representó cada uno el 21% del total de casos en poblaciones indígenas de la Amazonía y Andes. El 2020, los ashaninkas registraron mayores casos, siendo el 26% del total de casos.  El 2021, los ashaninkas, alcanzaron el 27% y los awajún el 23% del total de casos. El 2022, los awajún registraron el 23% y los ashaninkas el 16% del total de casos. El 2023, los awajún alcanzaron el 21% y los ashaninkas el 12% del total de casos de dengue.
+
+::: panel-tabset
+## Tabla dinamica
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(scales)
+
+# 1. CARGA Y LIMPIEZA RIGUROSA DE DATOS
+# Leemos el archivo. El formato original tiene una cabecera compleja, así que la definiremos manualmente.
+raw_data <- read.csv("data-rtxSw.csv", skip = 1, header = FALSE, stringsAsFactors = FALSE)
+
+# Seleccionamos las primeras 11 columnas (Etnia + 5 pares de Año/%)
+# Asumiendo el orden: Etnia, 2019(N, %), 2020(N, %), 2021(N, %), 2022(N, %), 2023(N, %)
+df <- raw_data[, 1:11]
+colnames(df) <- c("Etnia", 
+                  "N_2019", "Pct_2019", 
+                  "N_2020", "Pct_2020", 
+                  "N_2021", "Pct_2021", 
+                  "N_2022", "Pct_2022", 
+                  "N_2023", "Pct_2023")
+
+# Función para limpiar números (quita comas, %, y convierte '-' a 0)
+clean_num <- function(x) {
+  x <- as.character(x)
+  x <- gsub(",", "", x)      # Quitar comas de miles
+  x <- gsub("%", "", x)      # Quitar símbolo %
+  x <- gsub("-", "0", x)     # Reemplazar guiones con 0
+  x <- trimws(x)             # Quitar espacios
+  as.numeric(x)
+}
+
+# Aplicar limpieza
+df_clean <- df %>%
+  mutate(across(starts_with("N_"), clean_num),
+         across(starts_with("Pct_"), clean_num)) %>%
+  filter(Etnia != "" & !is.na(Etnia)) # Eliminar filas vacías si las hay
+
+# 2. FUNCIÓN PARA EL MAPA DE CALOR (HEATMAP)
+# Crea una paleta de azul claro a azul oscuro basada en el valor
+color_scale <- function(value) {
+  if (is.na(value) || value == 0) {
+    return("#ffffff") # Blanco para 0
+  }
+  # Normalizamos asumiendo un máximo de referencia (ej. 30% para que se note el contraste)
+  # Puedes ajustar 'max_val' si tus datos tienen porcentajes más altos.
+  max_val <- 30 
+  normalized <- min(value / max_val, 1)
+  
+  # Interpolación de color (Blanco -> Azul Datawrapper)
+  f_color <- colorRamp(c("#f0f9e8", "#4ba8c9", "#08519c"))
+  rgb_val <- f_color(normalized)
+  rgb(rgb_val[1], rgb_val[2], rgb_val[3], maxColorValue = 255)
+}
+
+# Estilo para el texto de los porcentajes (Negrita si es alto, blanco si el fondo es muy oscuro)
+text_style <- function(value) {
+  color <- if (!is.na(value) && value > 15) "#ffffff" else "#000000"
+  list(color = color, fontWeight = "bold")
+}
+
+# 3. DEFINICIÓN DE COLUMNAS PARA REACTABLE
+# Definimos columnas N (Número)
+col_n_def <- function() {
+  colDef(
+    name = "Casos",
+    align = "right",
+    minWidth = 60,
+    format = colFormat(separators = TRUE)
+  )
+}
+
+# Definimos columnas Pct (%) con el Heatmap
+col_pct_def <- function() {
+  colDef(
+    name = "%",
+    align = "center",
+    minWidth = 60,
+    style = function(value) {
+      list(background = color_scale(value), color = text_style(value)$color, fontWeight = "bold")
+    },
+    format = colFormat(suffix = "%", digits = 1)
+  )
+}
+
+# 4. CREACIÓN DE LA TABLA
+reactable(
+  df_clean,
+  pagination = TRUE,
+  searchable = TRUE,
+  striped = FALSE, # Desactivado para que el heatmap resalte mejor
+  highlight = TRUE,
+  defaultPageSize = 10,
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#ffe59c", # Amarillo Datawrapper
+      color = "#333",
+      fontWeight = "bold",
+      borderBottom = "2px solid #333",
+      fontSize = "14px"
+    ),
+    borderColor = "#e0e0e0"
+  ),
+  # GRUPOS DE COLUMNAS (AÑOS)
+  columnGroups = list(
+    colGroup(name = "2019", columns = c("N_2019", "Pct_2019")),
+    colGroup(name = "2020", columns = c("N_2020", "Pct_2020")),
+    colGroup(name = "2021", columns = c("N_2021", "Pct_2021")),
+    colGroup(name = "2022", columns = c("N_2022", "Pct_2022")),
+    colGroup(name = "2023", columns = c("N_2023", "Pct_2023"))
+  ),
+  # DEFINICIÓN INDIVIDUAL DE COLUMNAS
+  columns = list(
+    Etnia = colDef(name = "Etnia / Pueblo", minWidth = 150, style = list(fontWeight = "bold", background = "#f9f9f9")),
+    N_2019 = col_n_def(), Pct_2019 = col_pct_def(),
+    N_2020 = col_n_def(), Pct_2020 = col_pct_def(),
+    N_2021 = col_n_def(), Pct_2021 = col_pct_def(),
+    N_2022 = col_n_def(), Pct_2022 = col_pct_def(),
+    N_2023 = col_n_def(), Pct_2023 = col_pct_def()
+  )
+) %>% 
+  browsable() %>%
+  tagList(
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; color: #333; margin-bottom: 15px;",
+      h3("", 
+         style = "font-weight: 700; margin-bottom: 5px; font-size: 18px;"),
+      p("Se presenta en detalle las atenciones por dengue y su porcentaje relativo por año.",
+        style = "font-size: 14px; color: #666; margin-top:0;")
+    )
+  )
+```
+
+## Data Fuente
+
+```{r}
+make_download_table(df_clean, filename_label = "dengue_poblaciones")
+```
+:::
+
+## **Dengue por grupos étnicos por sexo 2019-2023**
+
+El dengue por sexo se observa, en las poblaciones amazónicas, más casos de dengue en mujeres. En las poblaciones andina es ligeramente mayor en hombres. 
+
+::: panel-tabset
+## Grafico
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-align: "center"
+#| fig-height: 8
+
+library(tidyverse)
+library(plotly)
+library(scales)
+
+# 1. CARGA DE DATOS
+# Cargamos los datos del archivo data-qKMyW.csv
+csv_data <- "Año,Dengue,Mujer,Hombre
+2019,Población afroperuana,-,1
+2019,Poblaciones amazónicas,162,121
+2019,Poblaciones andinas,16,27
+2020,Población afroperuana,-,1
+2020,Poblaciones amazónicas,420,285
+2020,Poblaciones andinas,156,189
+2021,Población afroperuana,11,8
+2021,Poblaciones amazónicas,835,557
+2021,Poblaciones andinas,145,155
+2022,Población afroperuana,14,14
+2022,Poblaciones amazónicas,999,750
+2022,Poblaciones andinas,149,150
+2023,Población afroperuana,103,67
+2023,Poblaciones amazónicas,1228,997
+2023,Poblaciones andinas,156,168"
+
+data_raw <- read.csv(text = csv_data, check.names = FALSE)
+
+# 2. TRANSFORMACIÓN
+data_pyramid <- data_raw %>%
+  rename(Grupo = Dengue, Anio = Año) %>%
+  mutate(
+    # Limpieza de datos
+    Mujer = as.numeric(ifelse(Mujer == "-", 0, Mujer)),
+    Hombre = as.numeric(ifelse(Hombre == "-", 0, Hombre)),
+    # Ordenar factores
+    Grupo = factor(Grupo, levels = c("Población afroperuana", "Poblaciones andinas", "Poblaciones amazónicas"))
+  ) %>%
+  pivot_longer(cols = c("Mujer", "Hombre"), names_to = "Sexo", values_to = "Casos") %>%
+  mutate(
+    # Lógica de Pirámide: Hombres negativos
+    Valor_Plot = ifelse(Sexo == "Hombre", -Casos, Casos),
+    Tooltip_Text = paste0("<b>", Grupo, "</b><br>",
+                          "Año: ", Anio, "<br>",
+                          "Sexo: ", Sexo, "<br>",
+                          "Casos: ", format(Casos, big.mark = ","))
+  )
+
+# 3. ESTANDARIZACIÓN DEL EJE 0 (Simetría por Faceta)
+# Calculamos el máximo por grupo para que cada faceta tenga su propia escala simétrica
+dummy_ranges <- data_pyramid %>%
+  group_by(Grupo) %>%
+  summarise(Max_Val = max(abs(Casos))) %>%
+  crossing(Signo = c(-1, 1)) %>%
+  mutate(
+    Valor_Plot = Max_Val * Signo * 1.1, # 10% de margen extra
+    Sexo = "Hombre", # Valor dummy para evitar error de mapeo
+    Anio = 2019
+  )
+
+# 4. COLORES (Estilo Datawrapper original)
+cols_sexo <- c("Hombre" = "#6edef0", "Mujer" = "#ffe59c")
+
+# 5. GRÁFICO
+p <- ggplot(data_pyramid, aes(x = as.factor(Anio), y = Valor_Plot, fill = Sexo)) +
+  # Barras reales
+  geom_col(aes(text = Tooltip_Text), width = 0.8) +
+  # Puntos invisibles para forzar la simetría de escala en cada faceta
+  geom_point(data = dummy_ranges, aes(y = Valor_Plot), alpha = 0, inherit.aes = FALSE, x = 1) +
+  
+  coord_flip() +
+  # scales = "free_y" permite que cada grupo tenga su propia escala numérica (eje horizontal tras flip)
+  facet_wrap(~Grupo, ncol = 1, scales = "free_y") + 
+  
+  scale_fill_manual(values = cols_sexo) +
+  
+  # Formato de etiquetas del eje numérico (positivos a ambos lados)
+  scale_y_continuous(labels = function(x) comma(abs(x))) +
+  
+  labs(x = "", y = "Número de casos", fill = "") +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    legend.justification = "center",
+    # Estilo de títulos de faceta
+    strip.text = element_text(face = "bold", size = 11, color = "#333", hjust = 0),
+    panel.grid.major.y = element_blank(),
+    axis.text.y = element_text(size = 10, face = "bold")
+  )
+
+# 6. INTERACTIVIDAD
+ggplotly(p, tooltip = "text") %>%
+  layout(
+    title = list(
+      text = "",
+      font = list(size = 16, color = "#333333"),
+      y = 0.97
+    ),
+    margin = list(t = 80, b = 60, l = 80),
+    legend = list(
+      orientation = "h", 
+      x = 1, 
+      y = 1.15, 
+      xanchor = "left"
+    )
+  ) %>%
+  config(responsive = TRUE, displayModeBar = FALSE)
+```
+
+## Data Fuente
+
+```{r}
+make_download_table(data_raw, filename_label = "dengue_etnia_sexo")
+```
+:::
+
+## **Dengue por etnicidad y curso de vida 2019-2023**
+
+En los tres grupos poblacionales, por curso de vida, los más afectados son los adultos, seguidos por los jóvenes, de 18 a 29 años.
+
+::: panel-tabset
+## Grafico
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 6
+
+library(tidyverse)
+library(plotly)
+library(scales)
+
+# 1. DATOS (Extraídos del código Flourish)
+# Reconstrucción manual de la estructura JSON a DataFrame
+data_chart5 <- tribble(
+  ~Grupo, ~CursoVida, ~Valores,
+  "Población afroperuana", "01-05a", c("-","-","2","5","6"),
+  "Población afroperuana", "06-11a", c("-","-","-","3","23"),
+  "Población afroperuana", "12a - 17a", c("-","-","4","2","13"),
+  "Población afroperuana", "18-29a", c("-","-","4","3","28"),
+  "Población afroperuana", "30-59a", c("1","1","7","9","77"),
+  "Población afroperuana", "60a >", c("-","-","2","6","23"),
+  "Poblaciones andinas", "01-11m", c("2","-","1","-","-"),
+  "Poblaciones andinas", "01-05a", c("5","4","11","4","9"),
+  "Poblaciones andinas", "06-11a", c("7","26","28","28","27"),
+  "Poblaciones andinas", "12a - 17a", c("1","60","42","57","52"),
+  "Poblaciones andinas", "18-29a", c("7","86","73","87","93"),
+  "Poblaciones andinas", "30-59a", c("17","140","133","111","119"),
+  "Poblaciones andinas", "60a >", c("4","29","12","18","18"),
+  "Poblaciones amazónicas", "< 01m", c("0","0","1","2","0"),
+  "Poblaciones amazónicas", "01-11m", c("4","4","14","21","17"),
+  "Poblaciones amazónicas", "01-05a", c("32","35","66","120","130"),
+  "Poblaciones amazónicas", "06-11a", c("32","64","108","159","310"),
+  "Poblaciones amazónicas", "12a - 17a", c("30","72","187","297","386"),
+  "Poblaciones amazónicas", "18-29a", c("72","196","423","457","600"),
+  "Poblaciones amazónicas", "30-59a", c("99","284","505","596","671"),
+  "Poblaciones amazónicas", "60a >", c("14","50","88","97","111")
+)
+
+# 2. PROCESAMIENTO
+df_chart5 <- data_chart5 %>%
+  unnest(Valores) %>%
+  group_by(Grupo, CursoVida) %>%
+  mutate(Anio = 2019:2023) %>%
+  ungroup() %>%
+  mutate(
+    Casos = as.numeric(ifelse(Valores == "-", 0, Valores)),
+    # Ordenar grupos de edad lógicamente
+    CursoVida = factor(CursoVida, levels = c("< 01m", "01-11m", "01-05a", "06-11a", "12a - 17a", "18-29a", "30-59a", "60a >")),
+    Etiqueta = paste0("<b>", Grupo, "</b><br>",
+                      "Edad: ", CursoVida, "<br>",
+                      "Año: ", Anio, "<br>",
+                      "Casos: ", Casos)
+  )
+
+# 3. COLORES (Paleta categórica similar a Flourish)
+cols_edad <- c(
+  "< 01m" = "#66C5CC", "01-11m" = "#F6CF71", "01-05a" = "#F89C74",
+  "06-11a" = "#DCB0F2", "12a - 17a" = "#87C55F", "18-29a" = "#9EB9F3",
+  "30-59a" = "#FE88B1", "60a >" = "#C9DB74"
+)
+
+# 4. GRÁFICO BASE (GGPLOT2)
+p <- ggplot(df_chart5, aes(x = as.factor(Anio), y = Casos, fill = CursoVida, text = Etiqueta)) +
+  geom_col(position = "stack", width = 0.8) + # Columnas apiladas
+  facet_wrap(~Grupo, scales = "free_y", nrow = 1) + # Facetas por etnia (escalas independientes para ver afroperuanos)
+  scale_fill_manual(values = cols_edad) +
+  labs(x = "", y = "Número de casos", fill = "Curso de Vida") +
+  theme_minimal() +
+  theme(
+    strip.text = element_text(face = "bold", size = 11, color = "#090d81"),
+    legend.position = "bottom",
+    panel.grid.major.x = element_blank(),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+# 5. CONVERTIR A INTERACTIVO
+ggplotly(p, tooltip = "text") %>%
+  layout(
+    title = list(
+      text = "",
+      font = list(size = 16, color = "#090d81"),
+      y = 0.97
+    ),
+    margin = list(t = 60, b = 80),
+    legend = list(orientation = "h", x = 0.5, y = -0.2, xanchor = "center")
+  ) %>%
+  config(displayModeBar = FALSE)
+
+```
+
+## Data Fuente
+
+```{r}
+
+make_download_table(df_chart5, filename_label = "dengue_etnias_edad")
+```
+:::
+
+## **Dengue en poblaciones andinas por departamentos 2019-2023**
+En las poblaciones andinas, Ayacucho es el departamento con mayores registros, desde el 2019 hasta el 2022 tenía más del 70% del total de casos de dengue, seguido por Cusco. El 2023, continuó siendo el departamento con mayores registros con el 39% del total en poblaciones andinas.
+
+::: panel-tabset
+## Tabla dinámica
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sparkline) # Librería ligera para minigráficos
+
+# 1. DATOS (Extraídos de data-m5ORi.csv)
+csv_data_diresa <- "Diresa,2019,2020,2021,2022,2023,X.1,X.2,X.3,X.4,X.5
+Amazonas,-,-,-,5,-,-,-,-,2%,-
+Ancash,1,-,-,18,26,2%,0%,-,6%,8%
+Arequipa,-,-,-,-,1,-,-,-,0%,0%
+Ayacucho,32,294,247,162,125,74%,85%,82%,53%,39%
+Cajamarca,-,-,1,1,1,-,-,0%,0.3%,0.3%
+Cusco,2,21,18,75,41,5%,6%,6%,25%,13%
+Huancavelica,1,-,1,-,-,2%,0%,0%,-,1%
+Huanuco,-,2,3,2,2,-,1%,1%,1%,1%
+Ica,-,3,2,1,10,-,1%,1%,0.3%,3%
+Junin,-,5,7,4,6,-,1%,2%,1%,2%
+La Libertad,-,-,-,-,8,-,-,-,0%,3%
+Lambayeque,-,-,2,1,26,-,-,1%,0.3%,8%
+Lima DIRIS Centro,-,-,1,-,10,-,-,0%,-,3%
+Lima DIRIS Norte,-,-,-,-,1,-,-,-,-,0.3%
+Lima DIRIS Sur,-,-,-,-,4,-,-,-,-,1%
+Lima Provincias,-,-,1,-,1,-,-,0%,-,0.3%
+Loreto,3,10,6,12,30,7%,3%,2%,4%,9%
+Madre de Dios,1,5,3,10,13,2%,1%,1%,3%,4%
+Pasco,1,1,-,2,5,2%,0%,-,1%,2%
+Piura,-,2,4,4,6,-,1%,1%,1%,2%
+San Martin,1,2,3,2,1,2%,1%,1%,1%,0.3%
+Tumbes,-,-,1,-,-,-,-,0%,-,0%
+Ucayali,1,3,1,8,4,2%,1%,0.3%,3%,1%"
+
+data_raw <- read.csv(text = csv_data_diresa, check.names = FALSE)
+
+# 2. LIMPIEZA Y PREPARACIÓN DE DATOS
+clean_val <- function(x) {
+  x <- as.character(x)
+  x <- gsub(",", "", x)
+  x <- gsub("%", "", x)
+  x <- gsub("-", "0", x)
+  x <- trimws(x)
+  x[x == ""] <- "0"
+  as.numeric(x)
+}
+
+colnames(data_raw) <- c("Diresa", 
+                        "N_2019", "N_2020", "N_2021", "N_2022", "N_2023",
+                        "Pct_2019", "Pct_2020", "Pct_2021", "Pct_2022", "Pct_2023")
+
+data_clean <- data_raw %>%
+  mutate(across(starts_with("N_"), clean_val),
+         across(starts_with("Pct_"), clean_val)) %>%
+  filter(Diresa != "" & !is.na(Diresa)) %>%
+  rowwise() %>%
+  # Crear una lista con la serie de tiempo para cada fila (para el sparkline)
+  mutate(Tendencia = list(c(N_2019, N_2020, N_2021, N_2022, N_2023))) %>%
+  ungroup() %>%
+  # Reordenar para poner la Tendencia después del nombre
+  select(Diresa, Tendencia, everything())
+
+# 3. FUNCIONES AUXILIARES DE ESTILO
+get_color <- function(value) {
+  if (is.na(value) || value == 0) return("#ffffff")
+  max_val <- 85
+  normalized <- min(value / max_val, 1)
+  f_color <- colorRamp(c("#f0f9e8", "#4ba8c9", "#08519c"))
+  rgb_val <- f_color(normalized)
+  rgb(rgb_val[1], rgb_val[2], rgb_val[3], maxColorValue = 255)
+}
+
+get_text_color <- function(value) {
+  if (!is.na(value) && value > 40) "#ffffff" else "#000000"
+}
+
+# 4. CREACIÓN DE LA TABLA
+table_widget <- reactable(
+  data_clean,
+  pagination = TRUE,
+  searchable = TRUE,
+  striped = FALSE,
+  highlight = TRUE,
+  defaultPageSize = 10,
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#ffe59c",
+      color = "#333",
+      fontWeight = "bold",
+      borderBottom = "2px solid #333",
+      fontSize = "13px"
+    ),
+    cellStyle = list(
+      fontFamily = "Roboto, Arial, sans-serif",
+      fontSize = "13px",
+      verticalAlign = "middle" # Centrar verticalmente, importante para el sparkline
+    )
+  ),
+  columnGroups = list(
+    colGroup(name = "2019", columns = c("N_2019", "Pct_2019")),
+    colGroup(name = "2020", columns = c("N_2020", "Pct_2020")),
+    colGroup(name = "2021", columns = c("N_2021", "Pct_2021")),
+    colGroup(name = "2022", columns = c("N_2022", "Pct_2022")),
+    colGroup(name = "2023", columns = c("N_2023", "Pct_2023"))
+  ),
+  columns = list(
+    Diresa = colDef(name = "DIRESA", minWidth = 120, style = list(fontWeight = "bold", background = "#f9f9f9")),
+    
+    # Columna de Tendencia (Sparkline)
+    Tendencia = colDef(
+      name = "Tendencia",
+      minWidth = 100,
+      align = "center",
+      cell = function(value) {
+        # Generar el HTML del sparkline usando spk_chr
+        sparkline(value, 
+                  type = "line", 
+                  width = 80, 
+                  height = 25, 
+                  lineColor = "#090d81", # Azul oscuro acorde al tema
+                  fillColor = FALSE, 
+                  lineWidth = 2,
+                  spotColor = "#ff0000", # Puntos rojos para min/max/final
+                  minSpotColor = "#ff0000",
+                  maxSpotColor = "#ff0000",
+                  highlightSpotColor = "#555",
+                  highlightLineColor = "#555",
+                  spotRadius = 2)
+      }
+    ),
+    
+    # Columnas de Datos
+    N_2019 = colDef(name = "Casos", align = "right", minWidth = 50),
+    Pct_2019 = colDef(name = "%", align = "center", minWidth = 50, style = function(v) list(background = get_color(v), color = get_text_color(v), fontWeight = "bold")),
+    
+    N_2020 = colDef(name = "Casos", align = "right", minWidth = 50),
+    Pct_2020 = colDef(name = "%", align = "center", minWidth = 50, style = function(v) list(background = get_color(v), color = get_text_color(v), fontWeight = "bold")),
+    
+    N_2021 = colDef(name = "Casos", align = "right", minWidth = 50),
+    Pct_2021 = colDef(name = "%", align = "center", minWidth = 50, style = function(v) list(background = get_color(v), color = get_text_color(v), fontWeight = "bold")),
+    
+    N_2022 = colDef(name = "Casos", align = "right", minWidth = 50),
+    Pct_2022 = colDef(name = "%", align = "center", minWidth = 50, style = function(v) list(background = get_color(v), color = get_text_color(v), fontWeight = "bold")),
+    
+    N_2023 = colDef(name = "Casos", align = "right", minWidth = 50),
+    Pct_2023 = colDef(name = "%", align = "center", minWidth = 50, style = function(v) list(background = get_color(v), color = get_text_color(v), fontWeight = "bold"))
+  )
+)
+
+# Renderizar incluyendo las dependencias de sparkline
+browsable(
+  tagList(
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; color: #333; margin-bottom: 15px;",
+      h3("", 
+         style = "font-weight: 700; margin-bottom: 5px; font-size: 18px;"),
+      p("",
+        style = "font-size: 14px; color: #666; margin-top:0;")
+    ),
+    spk_add_deps(table_widget) # Añadir dependencias JS para que se vean las líneas
+  )
+)
+```
+
+## Data Fuente
+
+```{r}
+make_download_table(data_clean, filename_label = "dengue_andinos")
+```
+:::
+
+## **Dengue en poblaciones amazónicas por departamento 2019-2023**
+En las poblaciones amazónicas, el 2019, Loreto registraba más del 80% de casos. Desde el 2020 los departamentos con mayores casos son Amazonas, Loreto, Ucayali, Amazonas y Pasco. El 2023 so observa el aumento de registros de casos en San Martín y Junín.
+
+::: panel-tabset
+## Tabla dinámica
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sparkline)
+
+# 1. DATOS (Extraídos de data-H7ABJ.csv)
+csv_data_new <- "Diresa,2019,2020,2021,2022,2023,X.1,X.2,X.3,X.4,X.5
+Amazonas,9,40,385,504,605,3%,6%,28%,29%,27%
+Ancash,-,-,-,1,3,-,-,-,0.1%,0.1%
+Ayacucho,-,5,7,1,1,0%,1%,1%,0.1%,0.0%
+Cajamarca,1,1,-,7,1,0%,0%,0%,0.4%,0.0%
+Callao,-,-,-,-,1,-,-,-,0.0%,0.0%
+Cusco,4,29,27,38,43,1%,4%,2%,2.2%,2%
+Huánuco,2,7,15,19,12,1%,1%,1%,1.1%,0.5%
+Ica,-,1,1,1,6,-,0%,0%,0.1%,0.3%
+Junín,6,74,119,70,138,2%,10%,9%,4%,6%
+La Libertad,-,-,-,1,18,-,-,-,0.1%,0.8%
+Lambayeque,-,-,-,6,54,-,-,-,0.3%,2.4%
+Lima DIRIS Centro,-,-,-,-,2,-,-,-,0.0%,0.1%
+Lima DIRIS Este,-,-,-,1,28,-,-,-,0.1%,1.2%
+Lima DIRIS Norte,-,-,-,2,28,-,-,-,0.1%,1.2%
+Lima DIRIS Sur,-,-,-,15,31,-,-,-,0.9%,1.4%
+Lima Provincias,-,1,-,2,1,-,0%,-,0.1%,0.0%
+Loreto,226,458,634,801,987,70%,66%,46%,46%,44%
+Madre de Dios,64,68,168,235,229,20%,10%,12%,14%,10%
+Moquegua,-,-,-,-,4,-,-,-,0.0%,0.2%
+Pasco,4,1,3,10,34,1%,0%,0%,0.6%,1.5%
+Piura,-,-,-,1,5,-,-,-,0.1%,0.2%
+San Martín,2,6,12,11,10,1%,1%,1%,0.6%,0.4%
+Tacna,-,-,-,-,1,-,-,-,0.0%,0.0%
+Ucayali,3,3,2,3,7,1%,0%,0%,0.2%,0.3%"
+
+data_raw <- read.csv(text = csv_data_new, check.names = FALSE)
+
+# 2. LIMPIEZA Y PREPARACIÓN
+clean_val <- function(x) {
+  x <- as.character(x)
+  x <- gsub(",", "", x)
+  x <- gsub("%", "", x)
+  x <- gsub("-", "0", x)
+  x <- trimws(x)
+  x[x == ""] <- "0"
+  as.numeric(x)
+}
+
+colnames(data_raw) <- c("Diresa", 
+                        "N_2019", "N_2020", "N_2021", "N_2022", "N_2023",
+                        "Pct_2019", "Pct_2020", "Pct_2021", "Pct_2022", "Pct_2023")
+
+data_clean <- data_raw %>%
+  mutate(across(starts_with("N_"), clean_val),
+         across(starts_with("Pct_"), clean_val)) %>%
+  filter(Diresa != "" & !is.na(Diresa)) %>%
+  rowwise() %>%
+  mutate(Tendencia = list(c(N_2019, N_2020, N_2021, N_2022, N_2023))) %>%
+  ungroup() %>%
+  select(Diresa, Tendencia, everything())
+
+# 3. FUNCIONES DE ESTILO (NUEVA PALETA: NARANJA)
+get_color <- function(value) {
+  if (is.na(value) || value == 0) return("#ffffff")
+  
+  max_val <- 70 # Ajustado al máximo observado (Loreto 70%)
+  normalized <- min(value / max_val, 1)
+  
+  # Paleta Naranja/Rojo para diferenciar
+  f_color <- colorRamp(c("#fff7ec", "#fd8d3c", "#7f0000")) 
+  rgb_val <- f_color(normalized)
+  rgb(rgb_val[1], rgb_val[2], rgb_val[3], maxColorValue = 255)
+}
+
+get_text_color <- function(value) {
+  if (!is.na(value) && value > 30) "#ffffff" else "#000000"
+}
+
+# 4. CREACIÓN DE LA TABLA
+table_widget <- reactable(
+  data_clean,
+  pagination = TRUE,
+  searchable = TRUE,
+  striped = FALSE,
+  highlight = TRUE,
+  defaultPageSize = 10,
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#ffe59c",
+      color = "#333",
+      fontWeight = "bold",
+      borderBottom = "2px solid #333",
+      fontSize = "13px"
+    ),
+    cellStyle = list(
+      fontFamily = "Roboto, Arial, sans-serif",
+      fontSize = "13px",
+      verticalAlign = "middle"
+    )
+  ),
+  columnGroups = list(
+    colGroup(name = "2019", columns = c("N_2019", "Pct_2019")),
+    colGroup(name = "2020", columns = c("N_2020", "Pct_2020")),
+    colGroup(name = "2021", columns = c("N_2021", "Pct_2021")),
+    colGroup(name = "2022", columns = c("N_2022", "Pct_2022")),
+    colGroup(name = "2023", columns = c("N_2023", "Pct_2023"))
+  ),
+  columns = list(
+    Diresa = colDef(name = "DIRESA", minWidth = 120, style = list(fontWeight = "bold", background = "#f9f9f9")),
+    
+    # Sparkline con color naranja oscuro para combinar
+    Tendencia = colDef(
+      name = "Tendencia",
+      minWidth = 100,
+      align = "center",
+      cell = function(value) {
+        sparkline(value, 
+                  type = "line", 
+                  width = 80, 
+                  height = 25, 
+                  lineColor = "#d94801", # Naranja oscuro
+                  fillColor = FALSE, 
+                  lineWidth = 2,
+                  spotColor = "#7f0000",
+                  minSpotColor = "#7f0000",
+                  maxSpotColor = "#7f0000",
+                  spotRadius = 2)
+      }
+    ),
+    
+    # Columnas de datos con la nueva función de color
+    N_2019 = colDef(name = "Casos", align = "right", minWidth = 50),
+    Pct_2019 = colDef(name = "%", align = "center", minWidth = 50, style = function(v) list(background = get_color(v), color = get_text_color(v), fontWeight = "bold")),
+    
+    N_2020 = colDef(name = "Casos", align = "right", minWidth = 50),
+    Pct_2020 = colDef(name = "%", align = "center", minWidth = 50, style = function(v) list(background = get_color(v), color = get_text_color(v), fontWeight = "bold")),
+    
+    N_2021 = colDef(name = "Casos", align = "right", minWidth = 50),
+    Pct_2021 = colDef(name = "%", align = "center", minWidth = 50, style = function(v) list(background = get_color(v), color = get_text_color(v), fontWeight = "bold")),
+    
+    N_2022 = colDef(name = "Casos", align = "right", minWidth = 50),
+    Pct_2022 = colDef(name = "%", align = "center", minWidth = 50, style = function(v) list(background = get_color(v), color = get_text_color(v), fontWeight = "bold")),
+    
+    N_2023 = colDef(name = "Casos", align = "right", minWidth = 50),
+    Pct_2023 = colDef(name = "%", align = "center", minWidth = 50, style = function(v) list(background = get_color(v), color = get_text_color(v), fontWeight = "bold"))
+  )
+)
+
+browsable(
+  tagList(
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; color: #333; margin-bottom: 15px;",
+      h3("", 
+         style = "font-weight: 700; margin-bottom: 5px; font-size: 18px;"),
+      p("",
+        style = "font-size: 14px; color: #666; margin-top:0;")
+    ),
+    spk_add_deps(table_widget)
+  )
+)
+  
+ 
+```
+
+## Data Fuente
+
+```{r}
+make_download_table(data_clean, filename_label = "dengue_amazonicos")
+```
+:::
+
+## **Dengue en población afroperuana por departamentos 2019-2023**
+Los mayores registros de casos de dengue en población afroperuana, desde el 2019 al 2022, proceden de Piura. El 2023, Lambayeque registró el 45% de los registros totales de población afroperuana y Piura el 42%.
+
+::: panel-tabset
+
+## Tabla dinámica
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sparkline)
+
+# 1. DATOS (Extraídos de data-wTUp6.csv)
+csv_data_afro <- "Departamentos,2019,2020,2021,2022,2023,X.1,X.2,X.3,X.4,X.5
+Ancash,-,-,-,-,2,-,-,-,-,1%
+Ayacucho,-,-,-,-,1,-,-,-,-,1%
+Cusco,-,1,1,-,1,0%,100%,5%,-,1%
+Huánuco,-,-,-,-,2,-,-,-,-,1%
+Ica,1,-,1,-,14,100%,0%,5%,-,8%
+Lambayeque,-,-,-,3,77,-,-,-,11%,45%
+Lima Diris Este,-,-,1,-,1,-,-,5%,-,1%
+Loreto,-,-,3,1,1,-,-,16%,4%,1%
+Piura,-,-,13,24,71,-,-,68%,86%,42%
+Total general,1,1,19,28,170,100%,100%,100%,100%,100%"
+
+data_raw <- read.csv(text = csv_data_afro, check.names = FALSE)
+
+# 2. LIMPIEZA Y PREPARACIÓN
+clean_val <- function(x) {
+  x <- as.character(x)
+  x <- gsub(",", "", x)
+  x <- gsub("%", "", x)
+  x <- gsub("-", "0", x)
+  x <- trimws(x)
+  x[x == ""] <- "0"
+  as.numeric(x)
+}
+
+colnames(data_raw) <- c("Departamento", 
+                        "N_2019", "N_2020", "N_2021", "N_2022", "N_2023",
+                        "Pct_2019", "Pct_2020", "Pct_2021", "Pct_2022", "Pct_2023")
+
+data_clean <- data_raw %>%
+  mutate(across(starts_with("N_"), clean_val),
+         across(starts_with("Pct_"), clean_val)) %>%
+  filter(Departamento != "Total general" & Departamento != "" & !is.na(Departamento)) %>% # Excluir total si se desea analizar regiones
+  rowwise() %>%
+  mutate(Tendencia = list(c(N_2019, N_2020, N_2021, N_2022, N_2023))) %>%
+  ungroup() %>%
+  select(Departamento, Tendencia, everything())
+
+# 3. FUNCIONES DE ESTILO (NUEVA PALETA: PÚRPURA)
+get_color <- function(value) {
+  if (is.na(value) || value == 0) return("#ffffff")
+  
+  max_val <- 100 
+  normalized <- min(value / max_val, 1)
+  
+  # Paleta Púrpura para diferenciar
+  f_color <- colorRamp(c("#fcfbfd", "#9e9ac8", "#3f007d")) 
+  rgb_val <- f_color(normalized)
+  rgb(rgb_val[1], rgb_val[2], rgb_val[3], maxColorValue = 255)
+}
+
+get_text_color <- function(value) {
+  if (!is.na(value) && value > 40) "#ffffff" else "#000000"
+}
+
+# 4. CREACIÓN DE LA TABLA
+table_widget <- reactable(
+  data_clean,
+  pagination = TRUE,
+  searchable = TRUE,
+  striped = FALSE,
+  highlight = TRUE,
+  defaultPageSize = 10,
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#ffe59c",
+      color = "#333",
+      fontWeight = "bold",
+      borderBottom = "2px solid #333",
+      fontSize = "13px"
+    ),
+    cellStyle = list(
+      fontFamily = "Roboto, Arial, sans-serif",
+      fontSize = "13px",
+      verticalAlign = "middle"
+    )
+  ),
+  columnGroups = list(
+    colGroup(name = "2019", columns = c("N_2019", "Pct_2019")),
+    colGroup(name = "2020", columns = c("N_2020", "Pct_2020")),
+    colGroup(name = "2021", columns = c("N_2021", "Pct_2021")),
+    colGroup(name = "2022", columns = c("N_2022", "Pct_2022")),
+    colGroup(name = "2023", columns = c("N_2023", "Pct_2023"))
+  ),
+  columns = list(
+    Departamento = colDef(name = "Departamento", minWidth = 130, style = list(fontWeight = "bold", background = "#f9f9f9")),
+    
+    # Sparkline con color Púrpura oscuro
+    Tendencia = colDef(
+      name = "Tendencia",
+      minWidth = 100,
+      align = "center",
+      cell = function(value) {
+        sparkline(value, 
+                  type = "line", 
+                  width = 80, 
+                  height = 25, 
+                  lineColor = "#54278f", # Púrpura oscuro
+                  fillColor = FALSE, 
+                  lineWidth = 2,
+                  spotColor = "#3f007d",
+                  minSpotColor = "#3f007d",
+                  maxSpotColor = "#3f007d",
+                  spotRadius = 2)
+      }
+    ),
+    
+    # Columnas de datos
+    N_2019 = colDef(name = "Casos", align = "right", minWidth = 50),
+    Pct_2019 = colDef(name = "%", align = "center", minWidth = 50, style = function(v) list(background = get_color(v), color = get_text_color(v), fontWeight = "bold")),
+    
+    N_2020 = colDef(name = "Casos", align = "right", minWidth = 50),
+    Pct_2020 = colDef(name = "%", align = "center", minWidth = 50, style = function(v) list(background = get_color(v), color = get_text_color(v), fontWeight = "bold")),
+    
+    N_2021 = colDef(name = "Casos", align = "right", minWidth = 50),
+    Pct_2021 = colDef(name = "%", align = "center", minWidth = 50, style = function(v) list(background = get_color(v), color = get_text_color(v), fontWeight = "bold")),
+    
+    N_2022 = colDef(name = "Casos", align = "right", minWidth = 50),
+    Pct_2022 = colDef(name = "%", align = "center", minWidth = 50, style = function(v) list(background = get_color(v), color = get_text_color(v), fontWeight = "bold")),
+    
+    N_2023 = colDef(name = "Casos", align = "right", minWidth = 50),
+    Pct_2023 = colDef(name = "%", align = "center", minWidth = 50, style = function(v) list(background = get_color(v), color = get_text_color(v), fontWeight = "bold"))
+  )
+)
+
+browsable(
+  tagList(
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; color: #333; margin-bottom: 15px;",
+      h3("", 
+         style = "font-weight: 700; margin-bottom: 5px; font-size: 18px;"),
+      p("",
+        style = "font-size: 14px; color: #666; margin-top:0;")
+    ),
+    spk_add_deps(table_widget)
+  )
+)
+```
+
+## Data Fuente
+
+```{r}
+make_download_table(data_clean, filename_label = "dengue_afro")
+
+```
+:::

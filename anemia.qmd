@@ -1271,6 +1271,14 @@ reactable(
   )
 ```
 
+## Datos Fuente
+
+```{r}
+make_download_table(data_table, "data_anemia_andinos_departamentos")
+```
+
+
+
 ## **Anemia nutricional en poblaciones amazónicas por departamentos 2019-2025**
 Loreto, Amazonas y Ucayali son las regiones que encabezan los registros de anemia nutricional en la población amazónica, desde el 2019 hasta el 2023, variando  entre el 78% y 83%.
 
@@ -1380,6 +1388,11 @@ reactable(
   )
 ```
 
+## Datos Fuente
+
+```{r}
+make_download_table(data_table, "data_anemia_amazonicos_departamentos")
+```
 ## **Anemia nutricional en población afroperuana por curso de vida 2019-2025**
 
 ```{r}
@@ -1474,4 +1487,6 @@ reactable(
     )
   )
 ```
-
+```{r}
+make_download_table(data_table, "data_anemia_afroperuana_departamentos")
+```

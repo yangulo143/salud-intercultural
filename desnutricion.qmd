@@ -252,6 +252,11 @@ reactable(
 ```
 Durante el periodo analizado, 2019 al 2021, las etnias con más registros de casos son Quechua, Awajún, Ashaninka, Aimara, Shipibo-Konibo. Casi en todos aparece primero la categoría retardo del desarrollo debido a desnutrición proteicocalórica, sin embargo, el 2020, en los Aimaras aparece primero la categoría, Desnutrición proteicocalórica, no especificada. El 2021, Quechuas y Aimaras tienen más casos registrados en la categoría Desnutrición proteicocalórica, no especificada. En las etnias amazónicas aparecen más casos de la categoría Retardo del desarrollo debido a desnutrición proteicocalórica.
 
+## Datos Fuente
+
+```{r}
+make_download_table(data_nutricion_etnias, "data_desnutricion_etnias")
+```
 
 :::
 
@@ -1516,4 +1521,8 @@ reactable(
 ```
 El 2019, las regiones con más registro de casos son Apurímac y Cajamarca, en tanto que el 2020 y el 2021 es Piura.
 
+## Datos Fuente
 
+```{r}
+make_download_table(data_tabla, "data_nutricion_afro_tabla")
+```

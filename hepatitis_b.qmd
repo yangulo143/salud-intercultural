@@ -145,6 +145,11 @@ ggplotly(plot_etnia, tooltip = "text")
 
 ```
 
+## Datos Fuente
+
+```{r}
+make_download_table(hepatitis_clean, filename_label = "hepatitis_b_grafico")
+```
 ## Mapa Coroplético
 
 ```{r}
@@ -236,6 +241,12 @@ leaflet(mapa_final) %>%
     )
   ) %>%
   addLegend(pal = pal, values = ~Total_Dpto, opacity = 0.7, title = "Casos Hep B", position = "bottomright")
+```
+
+## Datos Fuente
+
+```{r}
+make_download_table(data_mapa_prep, filename_label = "hepatitis_b_mapa")
 ```
 
 ## Evolución por años
