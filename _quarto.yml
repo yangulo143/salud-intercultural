@@ -10,27 +10,36 @@ project:
     - anemia.qmd
     - hipertension.qmd
     - dengue.qmd
+    - cambio_climatico.qmd
+    - obesidad.qmd
 
 website:
   title: "Sala situacional Salud intercultural e Investigación Social (2019-2024)"
   navbar:
     left:
-      - href: index.qmd
-        text: "Inicio"
-      - href: hepatitis_b.qmd
-        text: "Hepatitis B"
-      - href: tuberculosis.qmd
-        text: "Tuberculosis"
-      - href: desnutricion.qmd
-        text: "Desnutricion"
-      - href: vih.qmd
-        text: "VIH"
-      - href: anemia.qmd
-        text: "Anemia"
-      - href: hipertension.qmd
-        text: "Hipertensión"
-      - href: dengue.qmd
-        text: "Dengue"
+      - text: "Inicio"
+        href: index.qmd
+      - text: "Sala situacional: Salud Intercultural"
+        menu: 
+        - text: "Hepatitis B"
+          href: hepatitis_b.qmd
+        - text: "Tuberculosis"
+          href: tuberculosis.qmd
+        - text: "Desnutricion"
+          href: desnutricion.qmd  
+        - text: "VIH"
+          href: vih.qmd
+        - text: "Anemia"
+          href: anemia.qmd
+        - text: "Hipertensión"
+          href: hipertension.qmd
+        - text: "Dengue"
+          href: dengue.qmd
+        - text: "Cambio Climático"
+          href: cambio_climatico.qmd
+        - text: "Obesidad"
+          href: obesidad.qmd
+        
 
 format:
   html:

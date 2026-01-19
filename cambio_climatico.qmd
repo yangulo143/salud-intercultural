@@ -1,0 +1,493 @@
+---
+title: "Cambio climático en poblaciones de los Andes y la Amazonía"
+subtitle: "Análisis de datos del Servicio Nacional de Meteorología e Hidrología (SENAMHI)"
+date: last-modified
+author: "Subdirección de Medicina Tradicional, Interculturalidad e Investigación Social (SUMTIS-CENSI)"
+format: 
+  html:
+    theme: cosmo
+    toc: true
+    page-layout: full
+    code-fold: true
+execute:
+  warning: false
+  message: false
+footer: "Fuente de datos: SENAMHI | Fecha de corte: 05/2023"
+---
+
+El cambio climático está teniendo un impacto significativo en las poblaciones indígenas del Perú, especialmente en su seguridad alimentaria y sus medios de vida. Las variaciones del clima y los eventos climáticos extremos, como la elevación de la temperatura, inundaciones y sequías, están afectando su capacidad para cultivar y cosechar alimentos, teniendo consecuencias negativas en su salud y sus ecosistemas naturales.
+
+El cambio climático fue calificado por la OMS como la mayor amenaza para la salud que afronta la humanidad, afectando el aire, agua, alimentos y la vivienda, en suma, los determinantes sociales relacionados a la salud(1).
+
+Se entiende por cambio climático a los cambios que se dan en la temperatura y el clima, pudiendo ser naturales o por actividades humanas, principalmente se da por la quema de combustibles fósiles como el carbón, el petróleo y el gas. Justamente esta quema de combustible genera el efecto invernadero en nuestro planeta, elevando la temperatura. Entre sus efectos, además de dañar la biodiversidad, también ocasiona inseguridad alimentaria, más pobreza y desigualdades(2).
+
+Según el informe Inventarios Nacionales de Gases de Efecto Invernadero - INGEI del 2016, el Perú emitió más de 205 millones de toneladas de CO2, representó menos del 1% en el mundo. Sin embargo, más de la mitad de las emisiones en nuestro país, provienen de pérdida y degradación de bosques y otras áreas silvestres (USCUSS). Son dos las actividades que causan la deforestación, el uso de los terrenos para actividades agroindustriales y la minería informal. Siendo esta última, la principal causa de deforestación, por ejemplo, en Madre de Dios(4).
+
+Una de las actividades tradicionales y ligadas a la alimentación es la agricultura. En la sierra, esta actividad es predominante para el consumo de la familia, producen alimentos básicos (papas, trigo, quinua) se combina con la ganadería. En la selva tradicionalmente la agricultura ha estado dominada por pueblos indígenas, dependiendo también de actividades de la pesca, la caza y la agricultura selectiva(5).
+
+Además, en la Amazonía, el consumo de pescado per cápita puede variar entre 250 a 800 gramos por persona al día, el cambio climático con el aumento de la temperatura de los ríos, disminuye el volumen de las precipitaciones, ocasionando la migración de especies y aumentando la sedimentación en los ríos, afectando la seguridad alimentaria de esta población3. Indudablemente, el cambio climático tiene efectos significativos en las poblaciones indígenas, quienes dependen de su territorio y recursos naturales para su sustento.
+
+## **Efectos en la biodiversidad**
+
+Perú es considerado uno de los diez países megadiversos del mundo. Esta diversidad, también conocida como biodiversidad, se manifiesta en zonas de vida, climas, ecosistemas, especies de flora y fauna, paisajes y culturas(6).
+
+El cambio climático podría afectar su desarrollo, fisiología y sus comportamientos durante las fases de crecimiento, reproducción y migración. Los cambios en las precipitaciones y el aumento de la temperatura pueden afectar la distribución, tamaño, estructura y abundancia de las poblaciones de algunas especies. A esto se suma, los efectos del cambio climático sobre el ciclo del agua, podría afectar las interacciones entre las especies, los ciclos de nutrientes y el funcionamiento, estructura y distribución de los ecosistemas(7).
+
+En el norte de la Amazonía, donde produce concentración y aumento de las lluvias combinado con periodos de sequía más prolongados, específicamente, en la parte de selva alta se manifiesta la interrelación entre deforestación y variación del clima, ya se constata la pérdida de hábitats y biodiversidad. Como en los cambios en la fructificación de las plantas en épocas del año diferentes a las habituales, lo cual afecta a muchas especies de fauna silvestre(6).
+
+Por otro lado, las alteraciones en los procesos ambientales y climáticos por el calentamiento global, están provocando el desplazamiento forzado de las poblaciones indígenas debido a la pérdida de tierras y recursos naturales, especialmente la escasez de agua, que deviene en la inseguridad alimentaria(8). Como sucedió con los migrantes aimaras quienes ante la sequía de desplazaron a las ciudades (9).
+
+## **Algunos indicadores del cambio climático**
+
+En esta primera instancia, se presentan algunos indicadores del componente de calidad ambiental: temperatura, precipitaciones y la reducción de la superficie glacial.
+
+::: panel-tabset
+## Tabla dinámica
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sparkline)
+library(DT)
+
+# --- FUNCIÓN AUXILIAR PARA TABLAS DE DESCARGA ---
+# Esta función crea estandariza el botón de Excel para todos los gráficos
+make_download_table <- function(data_input, filename_label = "datos") {
+  datatable(
+    data_input,
+    extensions = 'Buttons',
+    rownames = FALSE,
+    options = list(
+      dom = 'Bfrtip',
+      buttons = list(
+        list(extend = 'excel', filename = filename_label, title = filename_label),
+        list(extend = 'csv', filename = filename_label)
+      ),
+      pageLength = 5, # Pocas filas para no ocupar mucho espacio
+      scrollX = TRUE,
+      language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')
+    )
+  )
+}
+
+# 1. DATOS
+csv_data_temp <- "Departamento,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021
+Amazonas,14.7,15.0,14.9,15.1,15.6,15.2,14.9,15.0,15.3,15.0
+Áncash,12.4,12.5,12.5,12.8,13.1,12.3,12.0,12.5,-,11.2
+Apurímac,14.0,14.1,14.1,14.5,14.9,14.3,14.2,14.6,-,13.6
+Arequipa,15.6,15.6,16.1,17.1,17.3,16.6,16.6,17.0,-,16.2
+Ayacucho,18.0,18.2,18.4,18.3,18.8,18.1,17.1,17.0,18.2,17.4
+Cajamarca,14.6,14.9,15.0,15.4,15.6,15.0,14.9,15.0,15.5,14.9
+Cusco,12.3,12.3,12.5,13.0,13.4,12.7,12.6,12.9,13.5,12.7
+Huancavelica,10.6,10.6,10.7,11.4,11.8,11.1,10.9,11.3,-,10.6
+Huánuco,19.3,19.2,19.3,19.8,20.0,19.5,19.3,19.9,20.3,19.4
+Ica,19.7,19.0,19.8,20.9,20.7,20.3,19.8,20.0,20.3,19.9
+Junín,11.3,11.3,11.7,12.1,12.5,11.9,11.7,12.0,-,11.6
+La Libertad,17.9,17.5,18.1,19.3,18.7,18.5,17.8,18.2,18.3,17.8
+Lambayeque,20.4,19.6,20.6,21.8,20.9,21.1,20.1,20.5,20.7,20.2
+Lima,16.2,15.6,16.2,17.1,16.7,16.8,16.0,16.3,16.5,16.2
+Loreto,27.1,27.0,27.0,27.5,27.6,27.2,27.0,27.3,27.5,26.9
+Madre de Dios,25.6,25.1,25.4,26.0,25.4,25.5,25.3,25.9,26.1,25.5
+Moquegua,14.8,14.2,15.0,15.9,16.2,15.6,15.1,15.4,-,14.8
+Pasco,12.9,12.9,12.9,13.4,13.6,13.1,12.9,13.2,-,13.1
+Piura,24.4,23.6,24.6,25.8,24.7,24.9,23.9,24.4,24.5,24.1
+Puno,8.8,8.5,9.2,10.0,10.3,9.4,9.1,9.7,9.9,9.4
+San Martín,26.0,26.0,26.2,26.8,27.0,26.5,26.2,26.6,27.1,26.4
+Tacna,13.7,13.2,13.9,14.8,15.4,14.6,14.1,14.4,-,14.0
+Tumbes,25.3,24.5,25.3,26.6,25.5,25.6,24.7,25.1,25.4,24.8
+Ucayali,26.0,25.6,25.7,26.2,26.2,26.1,26.0,26.5,26.6,26.0"
+
+data_raw <- read.csv(text = csv_data_temp, check.names = FALSE)
+
+# 2. LIMPIEZA DE DATOS
+clean_val <- function(x) {
+  x <- as.character(x)
+  # Convertir "-" a NA
+  as.numeric(ifelse(x == "-", NA, x))
+}
+
+data_clean <- data_raw %>%
+  mutate(across(-Departamento, clean_val)) %>%
+  rowwise() %>%
+  mutate(Tendencia = list(c_across(2:11) %>% na.omit() %>% as.vector())) %>%
+  ungroup() %>%
+  select(Departamento, Tendencia, everything())
+
+# 3. PALETA DE COLORES INTUITIVA (Azul = Frío -> Rojo = Calor)
+get_color_temp <- function(value) {
+  if (is.na(value)) return("#ffffff")
+  
+  min_val <- 5  # Temperatura mínima referencia
+  max_val <- 30 # Temperatura máxima referencia
+  normalized <- (value - min_val) / (max_val - min_val)
+  normalized <- max(0, min(1, normalized))
+  
+  # Paleta Divergente: Azul Profundo -> Azul Claro -> Blanco -> Naranja -> Rojo Intenso
+  f_color <- colorRamp(c("#2166ac", "#d1e5f0", "#f7f7f7", "#fddbc7", "#b2182b")) 
+  rgb_val <- f_color(normalized)
+  rgb(rgb_val[1], rgb_val[2], rgb_val[3], maxColorValue = 255)
+}
+
+# Texto blanco para extremos (muy frío o muy caliente)
+get_text_color <- function(value) {
+  if (is.na(value)) return("#000")
+  if (value < 10 || value > 24) "#ffffff" else "#000000"
+}
+
+# 4. CREACIÓN DE LA TABLA
+table_widget <- reactable(
+  data_clean,
+  pagination = TRUE,
+  searchable = TRUE,
+  striped = FALSE,
+  highlight = TRUE,
+  defaultPageSize = 12,
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#ffffff",
+      color = "#333",
+      fontWeight = "bold",
+      borderBottom = "2px solid #333",
+      fontSize = "13px"
+    ),
+    cellStyle = list(
+      fontFamily = "Roboto, Arial, sans-serif",
+      fontSize = "13px",
+      verticalAlign = "middle"
+    )
+  ),
+  columns = list(
+    Departamento = colDef(minWidth = 120, style = list(fontWeight = "bold", background = "#f9f9f9")),
+    
+    Tendencia = colDef(
+      minWidth = 80,
+      align = "center",
+      cell = function(value) {
+        sparkline(value, type = "line", width = 60, height = 20, 
+                  lineColor = "#555", fillColor = FALSE, lineWidth = 1.5,
+                  # Puntos: Azul para el mínimo, Rojo para el máximo
+                  minSpotColor = "#2166ac", 
+                  maxSpotColor = "#b2182b", 
+                  spotRadius = 2)
+      }
+    ),
+    
+    `2012` = colDef(width = 45, style = function(v) list(background = get_color_temp(v), color = get_text_color(v))),
+    `2013` = colDef(width = 45, style = function(v) list(background = get_color_temp(v), color = get_text_color(v))),
+    `2014` = colDef(width = 45, style = function(v) list(background = get_color_temp(v), color = get_text_color(v))),
+    `2015` = colDef(width = 45, style = function(v) list(background = get_color_temp(v), color = get_text_color(v))),
+    `2016` = colDef(width = 45, style = function(v) list(background = get_color_temp(v), color = get_text_color(v))),
+    `2017` = colDef(width = 45, style = function(v) list(background = get_color_temp(v), color = get_text_color(v))),
+    `2018` = colDef(width = 45, style = function(v) list(background = get_color_temp(v), color = get_text_color(v))),
+    `2019` = colDef(width = 45, style = function(v) list(background = get_color_temp(v), color = get_text_color(v))),
+    `2020` = colDef(width = 45, cell = function(value) if(is.na(value)) "-" else value, style = function(v) list(background = get_color_temp(v), color = get_text_color(v))),
+    `2021` = colDef(width = 45, style = function(v) list(background = get_color_temp(v), color = get_text_color(v)))
+  )
+)
+
+# 5. RENDERIZADO
+browsable(
+  tagList(
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; color: #333; margin-bottom: 10px;",
+      h3("Temperatura promedio anual, según departamento, 2012-2021", 
+         style = "font-weight: 700; margin-bottom: 5px; font-size: 18px;"),
+      p("En el año 2020 no se dispone de información anual completa debido a la pandemia.",
+        style = "font-size: 12px; color: #666; margin-top:0;")
+    ),
+    table_widget %>% spk_add_deps()
+  )
+)
+```
+
+## Data Fuente
+
+```{r}
+
+make_download_table(data_clean, filename_label = "data_temperatura")
+
+```
+:::
+
+Las fluctuaciones de la temperatura suben y bajan en los diferentes años. En la tabla 1, las regiones en que se puede apreciar más claramente el aumento de la temperatura durante el periodo analizado son: Arequipa, el 2012 (15.6) y el 2021 (16.2); Cusco, 2012 (12.3) y el 2021 (14); Ica 2012 (20.7) y el 2021 (22); Loreto, 2012 (26.8) y el 2021 (27.5).
+
+Es preocupante el aumento de la temperatura como se puede evidenciar en algunas regiones. Los cambios de la temperatura unido a las alteraciones en las precipitaciones afectarán directamente a las reservas de agua terrestre (Schewe et al., 2014). Se prevé que la evaporación de la superficie terrestre aumentará a consecuencia de la tendencia global al aumento de la temperatura del aire en todas las regiones, excepto en las más secas (10)
+
+::: panel-tabset
+## Tabla dinámica
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sparkline)
+
+# 1. DATOS (Extraídos de data-q6TKH.csv)
+csv_data_precip <- "Departamento,2012,2013,2014,2015,2016,2017,2018,2019,2021
+Amazonas,1008.10,900.10,1057.80,1070.00,649.10,907.10,989.00,1074.30,885.90
+Áncash,953.80,849.60,980.40,-,559.40,1181.30,1069.70,962.40,-
+Apurímac,598.10,1117.20,-,1068.00,887.40,941.60,1009.10,1197.20,1001.00
+Arequipa,305.20,256.40,-,-,63.70,212.10,26.90,93.60,31.50
+Ayacucho,556.50,644.10,480.50,638.70,390.30,-,629.20,535.90,-
+Cajamarca,823.30,724.10,610.90,772.20,522.80,767.50,730.40,813.90,725.20
+Cusco,689.40,808.70,563.30,687.00,548.10,-,788.50,838.10,-
+Huancavelica,1163.20,1110.60,981.50,1167.30,647.70,950.40,929.30,1033.40,891.10
+Huánuco,1316.50,1260.60,1055.60,1312.40,1000.30,1217.40,1288.70,1478.40,1234.30
+Ica,4.60,20.40,4.40,3.30,0.30,32.30,6.00,6.00,0.60
+Junín,891.70,891.70,946.00,843.80,695.10,959.00,880.60,984.70,848.40
+La Libertad,874.10,516.30,670.30,1022.30,689.40,1015.30,698.80,1061.20,830.40
+Lambayeque,241.60,56.70,62.80,318.50,82.40,356.50,47.40,116.80,66.60
+Lima,11.50,18.00,10.60,5.70,4.40,24.00,15.60,18.30,8.70
+Loreto,2808.30,2856.80,2689.30,2775.10,2504.60,2522.60,2504.20,2745.30,3282.20
+Madre de Dios,1882.20,1956.80,2503.70,2275.40,1657.40,1881.50,1998.40,1822.40,1991.60
+Moquegua,145.40,107.00,32.80,95.30,33.00,55.90,32.20,113.80,48.20
+Pasco,1535.10,1535.10,1434.90,1213.90,1292.00,1523.50,1370.40,1588.60,1473.00
+Piura,411.70,80.10,133.00,544.70,361.30,642.70,131.70,237.90,148.90
+Puno,704.90,624.90,627.00,681.40,379.80,554.40,681.60,672.40,580.40
+San Martín,1248.80,1248.80,1202.90,1201.20,1015.80,1288.70,1199.10,1308.20,1515.60
+Tacna,53.20,44.70,16.40,49.80,18.90,36.40,21.80,50.70,30.30
+Tumbes,458.70,233.00,263.30,583.50,549.90,560.80,140.70,378.10,265.80
+Ucayali,1762.60,1803.90,1931.20,1729.00,1486.20,1447.80,1619.50,1648.70,2001.30"
+
+data_raw <- read.csv(text = csv_data_precip, check.names = FALSE)
+
+# 2. LIMPIEZA
+clean_val <- function(x) {
+  x <- as.character(x)
+  as.numeric(ifelse(x == "-", NA, x))
+}
+
+data_clean <- data_raw %>%
+  mutate(across(-Departamento, clean_val)) %>%
+  rowwise() %>%
+  # Tendencia excluyendo NAs para que la línea sea continua
+  mutate(Tendencia = list(c_across(2:10) %>% na.omit() %>% as.vector())) %>%
+  ungroup() %>%
+  select(Departamento, Tendencia, everything())
+
+# 3. PALETA DE COLORES (Secuencial Azul: Seco -> Húmedo)
+get_color_precip <- function(value) {
+  if (is.na(value)) return("#ffffff")
+  
+  # Rango de precipitación (aprox 0 a 3300 mm)
+  min_val <- 0
+  max_val <- 3300
+  normalized <- (value - min_val) / (max_val - min_val)
+  normalized <- max(0, min(1, normalized))
+  
+  # Paleta Secuencial Azul (Claro -> Oscuro)
+  # Usamos una paleta "Blues" estándar
+  f_color <- colorRamp(c("#f7fbff", "#deebf7", "#c6dbef", "#9ecae1", "#6baed6", "#4292c6", "#2171b5", "#08519c", "#08306b")) 
+  rgb_val <- f_color(normalized)
+  rgb(rgb_val[1], rgb_val[2], rgb_val[3], maxColorValue = 255)
+}
+
+get_text_color <- function(value) {
+  if (is.na(value)) return("#000")
+  # Texto blanco si el fondo es muy oscuro (mucha lluvia)
+  if (value > 1500) "#ffffff" else "#000000"
+}
+
+# 4. CREACIÓN DE LA TABLA
+table_widget <- reactable(
+  data_clean,
+  pagination = TRUE,
+  searchable = TRUE,
+  striped = FALSE,
+  highlight = TRUE,
+  defaultPageSize = 12,
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#ffffff",
+      color = "#333",
+      fontWeight = "bold",
+      borderBottom = "2px solid #333",
+      fontSize = "13px"
+    ),
+    cellStyle = list(
+      fontFamily = "Roboto, Arial, sans-serif",
+      fontSize = "13px",
+      verticalAlign = "middle"
+    )
+  ),
+  columns = list(
+    Departamento = colDef(minWidth = 120, style = list(fontWeight = "bold", background = "#f9f9f9")),
+    
+    Tendencia = colDef(
+      minWidth = 80,
+      align = "center",
+      cell = function(value) {
+        sparkline(value, type = "line", width = 60, height = 20, 
+                  lineColor = "#08519c", # Azul oscuro para la línea
+                  fillColor = FALSE, lineWidth = 1.5,
+                  minSpotColor = "#2171b5", 
+                  maxSpotColor = "#08306b", 
+                  spotRadius = 2)
+      }
+    ),
+    
+    `2012` = colDef(width = 50, style = function(v) list(background = get_color_precip(v), color = get_text_color(v))),
+    `2013` = colDef(width = 50, style = function(v) list(background = get_color_precip(v), color = get_text_color(v))),
+    `2014` = colDef(width = 50, 
+                    cell = function(value) if(is.na(value)) "-" else value,
+                    style = function(v) list(background = get_color_precip(v), color = get_text_color(v))),
+    `2015` = colDef(width = 50, 
+                    cell = function(value) if(is.na(value)) "-" else value,
+                    style = function(v) list(background = get_color_precip(v), color = get_text_color(v))),
+    `2016` = colDef(width = 50, style = function(v) list(background = get_color_precip(v), color = get_text_color(v))),
+    `2017` = colDef(width = 50, 
+                    cell = function(value) if(is.na(value)) "-" else value,
+                    style = function(v) list(background = get_color_precip(v), color = get_text_color(v))),
+    `2018` = colDef(width = 50, style = function(v) list(background = get_color_precip(v), color = get_text_color(v))),
+    `2019` = colDef(width = 50, 
+                    cell = function(value) if(is.na(value)) "-" else value,
+                    style = function(v) list(background = get_color_precip(v), color = get_text_color(v))),
+    `2021` = colDef(width = 50, 
+                    cell = function(value) if(is.na(value)) "-" else value,
+                    style = function(v) list(background = get_color_precip(v), color = get_text_color(v)))
+  )
+)
+
+# 5. RENDERIZADO
+browsable(
+  tagList(
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; color: #333; margin-bottom: 10px;",
+      h3("Precipitación total anual, según departamento, 2012-2021", 
+         style = "font-weight: 700; margin-bottom: 5px; font-size: 18px;"),
+      p("(Milímetros). El 2020 y 2021 no se registró información completa debido a la pandemia por COVID-19.",
+        style = "font-size: 12px; color: #666; margin-top:0;")
+    ),
+    table_widget %>% spk_add_deps()
+  )
+)
+```
+
+## Data Fuente
+
+```{r}
+make_download_table(data_clean, filename_label = "data_precipitaciones")
+```
+:::
+
+Se observa en la tabla 2, Arequipa, Tacna y Piura, en el periodo comprendido 2012-2021, han descendido sus precipitaciones en la mayoría de los años. Moquegua tiene una notable disminución el 2021. Ica tuvo la más baja precipitación, de todos los departamentos, el 2016 con 0.3 mm3. Piura se observa un descenso en las fluctuaciones de sus precipitaciones. La Libertad, el 2021, tuvo la disminución más bajo en 9 años. En Loreto, se observa un aumento progresivo de precipitaciones desde hace 4 años, en relación al 2012.
+
+Por otro lado, Perú alberga el 71 % de los glaciares tropicales del mundo, y que están experimentando una rápida desglaciación por el cambio climático, lo que da a lugar a numerosas lagunas de gran volumen, muchas de las cuales son contenidas por depósitos naturales y son inestables, según reportó el Ministerio del Ambiente, con la posibilidad de desbordar y causar estragos en las comunidades y el riesgo de pérdidas de vida.
+
+::: panel-tabset
+## Tabla dinamica
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+library(tidyverse)
+library(gt)
+
+# Creación del dataset
+glaciares_df <- tibble(
+  id = 1:18,
+  cordillera = c("Blanca", "Huallanca", "Huayhuash", "Raura", "Huagoruncho",
+                 "La Viuda", "Central", "Huaytapallana", "Chonta", "Urubamba",
+                 "Vilcabamba", "Apolobamba", "Carabaya", "Vilcanota", "La Raya",
+                 "Huanzo", "Chila", "Ampato"),
+  sup_1970_km2 = c(723.37, 20.91, 84.97, 55.20, 23.40, 
+                   28.60, 116.65, 59.08, 17.85, 41.48, 
+                   37.74, 81.12, 104.23, 418.43, 11.27, 
+                   36.93, 33.89, 146.73),
+  sup_2014_km2 = c(527.62, 7.01, 55.27, 28.34, 9.71, 
+                   6.03, 51.91, 24.58, 1.40, 15.89, 
+                   15.53, 44.51, 34.53, 279.40, 3.06, 
+                   4.51, 0.93, 60.96),
+  perdida_km2 = c(195.75, 13.90, 29.70, 26.86, 13.69, 
+                  22.57, 64.74, 34.50, 16.45, 25.59, 
+                  22.21, 36.61, 69.70, 139.03, 8.21, 
+                  32.42, 32.96, 85.77),
+  perdida_pct = c(27.06, 66.48, 34.95, 48.66, 58.50, 
+                  78.92, 55.50, 58.40, 92.16, 61.69, 
+                  58.85, 45.13, 66.87, 33.23, 72.85, 
+                  87.79, 97.26, 58.45)
+)
+
+
+
+glaciares_df %>%
+  gt() %>%
+  tab_header(
+    title = "Reducción de superficie glaciar entre 1970 al 2014",
+    subtitle = "Comparativo entre Inventario Hidrandina (1970) e Inv. UGRH (2014)"
+  ) %>%
+  cols_label(
+    id = md("**N°**"),
+    cordillera = md("**Cordilleras Nevadas**"),
+    sup_1970_km2 = md("**Sup. 1970**<br>**(km²)**"),
+    sup_2014_km2 = md("**Sup. 2014**<br>**(km²)**"),
+    perdida_km2 = md("**Pérdida**<br>**(km²)**"),
+    perdida_pct = md("**Pérdida**<br>**(%)**")
+  ) %>%
+  # 2. Alineación a la izquierda para la primera columna
+  cols_align(
+    align = "left",
+    columns = cordillera
+  ) %>%
+  # 3. Alineación al centro para las columnas numéricas (3 a la 6)
+  cols_align(
+    align = "center",
+    columns = c(sup_1970_km2, sup_2014_km2, perdida_km2, perdida_pct)
+  ) %>%
+  fmt_number(
+    columns = c(sup_1970_km2, sup_2014_km2, perdida_km2, perdida_pct),
+    decimals = 2,
+    dec_mark = ".",
+    sep_mark = " "
+  ) %>%
+  tab_source_note(
+    source_note = "Fuente: Inventario Nacional de Glaciares y Lagunas"
+  ) %>%
+  # Opcional: Colorear la columna de % para resaltar la pérdida
+  data_color(
+    columns = perdida_pct,
+    method = "numeric",
+    palette = c("white", "red")
+  )
+```
+
+## Data Fuente
+
+```{r}
+make_download_table(glaciares_df, filename_label = "glaciares")
+```
+:::
+
+En la tabla se observa, que del total de nevados (18) que se monitorea, 13 se ha reducido más del 50%. El retroceso de los glaciares y la correspondiente pérdida de masa de hielo aumenta el riesgo de escasez de agua para la población y en general, para los ecosistemas.
+
+## **Referencias Bibliográficas**
+
+1\. Organización Mundial de la Salud. Cambio climático y salud \[Internet\]. Nota de prensa. 2021 \[citado el 5 de abril de 2023\]. Disponible en: <https://www.who.int/es/news-room/fact-sheets/detail/climate-change-and-health>
+
+2\. Naciones Unidas. ¿Qué es el cambio climático? \[Internet\]. Recurso informativo. \[citado el 5 de abril de 2023\]. Disponible en: <https://www.un.org/es/climatechange/what-is-climate-change>
+
+3\. Ministerio del Ambiente, editor. El Perú y el Cambio Climático. l Perú y el Cambio Climático Tercera Comunicación \[Internet\]. Primera edición. Lima; 2016 \[citado el 5 de abril de 2023\]. 1–329 p. Disponible en: <https://www.minam.gob.pe/wp-content/uploads/2016/05/Tercera-Comunicaci%C3%B3n.pdf>
+
+4\. Raez E. Cambio climático en el Perú: contribuciones nacionales, su definición y estado de avance \[Internet\]. 1°. Lima: Movimiento Ciudadano frente al Cambio Climático (Mocicc; 2019 \[citado el 5 de abril de 2023\]. 1–68 p. Disponible en: <https://repositorio.ana.gob.pe/bitstream/handle/20.500.12543/4776/ANA0003285.pdf?sequence=1&isAllowed=y>
+
+5\. World Bank. Gaining momentum in Peruvian agriculture: Opportunities to increase productivity and enhance competitiveness \[Internet\]. 1°. Lima; 2017 \[citado el 5 de abril de 2023\]. 1–224 p. Disponible en: <https://documents1.worldbank.org/curated/en/275111518463714554/pdf/Gaining-momentum-in-Peruvian-agriculture-opportunities-to-increase-productivity-and-enhance-competitiveness.pdf>
+
+6\. Santa Cruz JF, Burneo María Luisa, Quiñones Patricia. Cambio climático y los impactos diferenciados que tiene en las mujeres en dos microcuencas de la región Junín \[Internet\]. 1°. Lima: Fomento de la Vida; 2022 \[citado el 5 de abril de 2023\]. 1–144 p. Disponible en: <https://fovida.org.pe/wp-content/uploads/2022/06/Cambio-climatico-e-Impactos-Diferenciados.pdf>
+
+7\. Uribe Botero E. El cambio climático y sus efectos en la biodiversidad en América Latina. Primera edición. CEPAL, editor. Santiago; 2015. 1–86 p. 
+
+8\. Andrea Carmen. Pueblos indígenas, los derechos humanos y el cambio climático. En: CHIRAPAQ C de CI del P, editor. Los Pueblos Indígenas y el Desafío del Cambio Climático Recuento de las Cumbres Indígenas de Latinoamérica sobre Cambio Climático \[Internet\]. Primera. Lima; 2011 \[citado el 5 de abril de 2023\]. p. 48–56. Disponible en: <http://chirapaq.org.pe/es/wp-content/uploads/sites/3/2018/03/Los-pueblos-indigenas-y-desafio-del-cambio-climatico.pdf>
+
+9\. Incacutipa Limachi DJ. Trayectorias migratorias de los aymaras del altiplano peruano. Alteridades \[Internet\]. el 3 de mayo de 2022 \[citado el 5 de abril de 2023\];32(63):107–18. Disponible en: <https://www.scielo.org.mx/scielo.php?pid=S0188-70172022000100107&script=sci_arttext>
+
+10\. Agua y cambio climático \[Internet\]. Colombella; 2020 \[citado el 5 de abril de 2023\]. Disponible en: <https://www.pseau.org/outils/ouvrages/unesco_informe_mundial_de_las_naciones_unidas_sobre_el_desarrollo_de_los_recursos_hidricos_2020_agua_y_cambio_climatico_datos_y_cifras_2020.pdf>

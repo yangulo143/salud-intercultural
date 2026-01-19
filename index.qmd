@@ -6,6 +6,7 @@ Encontrará contenido sobre algunas enfermedades que afectan a los pueblos de la
 
 ### Reportes Disponibles
 
+### **Salud intercultural**
 ::::: grid
 ::: g-col-6
 ### 📊 [Hepatitis B en poblaciones originarias amazónicas](hepatitis_b.html)
@@ -60,17 +61,27 @@ Encontrará contenido sobre algunas enfermedades que afectan a los pueblos de la
 :::
 
 ::: {.g-col-6}
+### 🌱 [Cambio Climático](cambio_climatico.html)
+**Fecha:** Mayo 2023
+**Datos:** Servicio Nacional de Meteorología e Hidrología (SENAMHI).
+:::
+
+::: {.g-col-6}
+### 🌱 [Obesidad](obesidad.html)
+**Fecha:** Diciembre 2025
+**Datos:** Scopus 
+Un análisis completo de la producción científica global sobre la especie vegetal Uncaria tomentosa (Uña de gato), incluyendo tendencias temporales, mapas de colaboración y nubes de palabras clave. 
+:::
+
+:::::
+
+### **Investigación Social: Etnicidad**
+::::: grid
+::: {.g-col-6}
 ### 🌱 [Fallecidos por etnicidad](Produccion_cientifica_coca.html)
 **Fecha:** Diciembre 2025
 **Datos:** Scopus 
 Un análisis completo de la producción científica global sobre la especie vegetal Erythroxylum coca (coca), incluyendo tendencias temporales, mapas de colaboración y nubes de palabras clave.
-:::
-
-::: {.g-col-6}
-### 🌱 [Cambio Climático](Produccion_cientifica_san pedro.html)
-**Fecha:** Diciembre 2025
-**Datos:** Scopus 
-Un análisis completo de la producción científica global sobre la especie vegetal Trichocereus macrogonus var. pachanoi (San Pedro), incluyendo tendencias temporales, mapas de colaboración y nubes de palabras clave.
 :::
 
 ::: {.g-col-6}
@@ -95,12 +106,7 @@ Un análisis completo de la producción científica global sobre la especie vege
 Un análisis completo de la producción científica global sobre la especie vegetal Lepidium meyenii (Maca), incluyendo tendencias temporales, mapas de colaboración y nubes de palabras clave. 
 :::
 
-::: {.g-col-6}
-### 🌱 [Obesidad](Produccion_cientifica_una_de_gato.html)
-**Fecha:** Diciembre 2025
-**Datos:** Scopus 
-Un análisis completo de la producción científica global sobre la especie vegetal Uncaria tomentosa (Uña de gato), incluyendo tendencias temporales, mapas de colaboración y nubes de palabras clave. 
-:::
+
 
 ::: {.g-col-6}
 ### 🌱 [Mortalidad materna por etnicidad](Produccion_cientifica_una_de_gato.html)

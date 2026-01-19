@@ -1,0 +1,2354 @@
+---
+title: "Obesidad en la población indígena y afroperuana"
+subtitle: "Análisis de datos del Ministerio de Salud (MINSA)"
+date: last-modified
+author: "Subdirección de Medicina Tradicional, Interculturalidad e Investigación Social (SUMTIS-CENSI)"
+format: 
+  html:
+    theme: cosmo
+    toc: true
+    page-layout: full
+    code-fold: true
+execute:
+  warning: false
+  message: false
+footer: "Fuente de datos: Sistema HISS-MINSA | Fecha de corte: 05/2022"
+---
+
+La obesidad, enfermedad crónica que se caracteriza por el aumento excesivo de grasa en el cuerpo y según la Organización Mundial de la Salud, esta ocasionada principalmente por el elevado consumo de alimentos ricos en grasa y la disminución de actividades físicas como consecuencia, principalmente, del estilo de vida sedentario.
+
+La obesidad tiene el riesgo de desarrollar otros problemas de salud, tales como la Diabetes de tipo 2, hipertensión en enfermedades cardiovasculares, osteoartritis, algunos tipos de cáncer, entre otras.
+
+En nuestro país, en el contexto de la pandemia por la Covid-19, de manera similar que, en otras enfermedades, disminuyó el registro de esta morbilidad por la reducción en el número de atenciones. Si consideramos la variable étnica, por ejemplo, en el caso de la población andina, el 2019, se registró 15 223 casos y el 2020, 6 756 casos, la variación porcentual disminuyó en 53%. En el caso de las poblaciones amazónicas bajo a 49% y en la población afroperuana en 34%.
+
+Según el CIE 10, la obesidad tiene las siguientes categorías:
+
+-   Obesidad debida a exceso de calorías
+
+-   Obesidad inducida por drogas
+
+-   Obesidad extrema con hipoventilación
+
+-   Otros tipos de obesidad
+
+-   Obesidad No Especificada
+
+-   Obesidad Grado I
+
+-   Obesidad Grado II
+
+-   Obesidad Grado III
+
+## **Obesidad en poblaciones andinas, amazónicas, afroperuanas y mestiza 2019-2021**
+
+En el periodo analizado, en la población afroperuana, el registro vario entre 0,01% a 0,03%. En las poblaciones amazónicas, de 0,6% a 0,7%. En las poblaciones Andinas, 1,4% a 1,6%. Puede acceder a la información completa descargando el archivo en excel de la tabla del contenido.
+
+::: panel-tabset
+## Grafico
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 6
+
+
+# --- PARCHE DE SEGURIDAD PARA EL ERROR PNG ---
+# Esto evita que R intente abrir una ventana gráfica fallida en sistemas sin pantalla
+options(bitmapType = 'cairo') 
+
+library(tidyverse)
+library(plotly)
+library(DT)
+library(scales)
+# --- FUNCIÓN AUXILIAR PARA TABLAS DE DESCARGA ---
+# Esta función crea estandariza el botón de Excel para todos los gráficos
+make_download_table <- function(data_input, filename_label = "datos") {
+  datatable(
+    data_input,
+    extensions = 'Buttons',
+    rownames = FALSE,
+    options = list(
+      dom = 'Bfrtip',
+      buttons = list(
+        list(extend = 'excel', filename = filename_label, title = filename_label),
+        list(extend = 'csv', filename = filename_label)
+      ),
+      pageLength = 5, # Pocas filas para no ocupar mucho espacio
+      scrollX = TRUE,
+      language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')
+    )
+  )
+}
+
+
+
+# 1. DATOS
+csv_data_etnia <- "Población étnica,2019,2020,2021
+Afroperuanos,198,131,236
+Andinos,23208,10844,11720
+Amazónicos,7909,4073,5900
+Mestizo,1377650,650512,804770"
+
+data_raw <- read.csv(text = csv_data_etnia, check.names = FALSE)
+
+# 2. TRANSFORMACIÓN
+data_plot <- data_raw %>%
+  pivot_longer(cols = -`Población étnica`, names_to = "Anio", values_to = "Casos") %>%
+  mutate(
+    # Convertir Año a numérico para que la línea sea continua y correcta
+    Anio_Num = as.numeric(as.character(Anio)),
+    # Ordenar por volumen de casos para jerarquía visual
+    `Población étnica` = reorder(`Población étnica`, -Casos, sum),
+    # Etiqueta enriquecida para el tooltip
+    Etiqueta = paste0("<b>", `Población étnica`, "</b><br>",
+                      "Año: ", Anio, "<br>",
+                      "Casos: ", comma(Casos))
+  )
+
+# 3. COLORES (Distintos para cada etnia para facilitar lectura rápida)
+cols_etnia <- c(
+  "Mestizo" = "#f9faa9",       # Amarillo (Estilo Datawrapper)
+  "Andinos" = "#74a3ff",       # Azul
+  "Amazónicos" = "#09bb9f",    # Verde azulado
+  "Afroperuano" = "#ffca76"    # Naranja
+)
+
+# 4. GRÁFICO DE LÍNEAS (Small Multiples)
+p <- ggplot(data_plot, aes(x = Anio_Num, y = Casos, group = `Población étnica`, color = `Población étnica`, text = Etiqueta)) +
+  # Línea de tendencia
+  geom_line(size = 1.2) + 
+  # Puntos para marcar los años exactos
+  geom_point(size = 3) +
+  
+  # Facetas con escalas independientes (CRUCIAL)
+  facet_wrap(~ `Población étnica`, scales = "free_y", nrow = 2) + 
+  
+  # Colores manuales
+  scale_color_manual(values = cols_etnia) +
+  
+  # Formato de ejes
+  scale_y_continuous(labels = comma) + 
+  scale_x_continuous(breaks = c(2019, 2020, 2021)) + # Forzar que solo salgan estos años
+  
+  labs(
+    title = "Tendencia de la población atendida por etnia (2019-2021)",
+    subtitle = "Caída generalizada en 2020 debido a la pandemia",
+    x = "", 
+    y = "Número de Atenciones",
+    color = ""
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, color = "#333"),
+    strip.text = element_text(face = "bold", size = 12, color = "#090d81"),
+    panel.grid.minor = element_blank(), # Limpiar líneas menores
+    legend.position = "none" # Ocultar leyenda (redundante con los títulos)
+  )
+
+# 5. INTERACTIVIDAD
+ggplotly(p, tooltip = "text") %>%
+  layout(
+    margin = list(t = 60, b = 40),
+    hovermode = "x unified" # Tooltip unificado para comparar verticalmente si se desea
+  ) %>%
+  config(displayModeBar = FALSE)
+
+```
+
+## Data Fuente
+
+```{r}
+
+make_download_table(data_plot, filename_label = "obesidad_año")
+
+```
+:::
+
+En la población afroperuana del 2019 al 2021, registró los siguientes casos de obesidad: 198 (0.01%), 131 (0.02%) y 236 (0.03%). En la población andina, en el mismo periodo, tuvieron los siguientes casos: 23 208 (1.6%), 10 844 (1.6%) y 11 720 (1.4%). En las poblaciones amazónicas, 7 909 (0.6%), 4 073 (0.6%) y 5 900 (0.7%). En tanto, que en la población mestiza desde el 2019 al 2021, se registró 1 377 650; 650 512 y 804 770 casos, respectivamente, representando en cada uno de los tres años el 98% del total de casos
+
+## **Obesidad por etnias en el Perú 2019-2021**
+
+::: panel-tabset
+## Tabla dinámica
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sparkline)
+
+# 1. DATOS (Extraídos de data-P99L0.csv)
+csv_data_obesidad <- "Etnia,Agrupación subcategorías,2019,2020,2021
+Achuar,Obesidad,75,33,43
+Achuar,Obesidad no especificada,52,24,296
+Achuar,Total,127,57,339
+Aimara,Obesidad,3020,1296,1189
+Aimara,Obesidad no especificada,1338,612,1067
+Aimara,Total,4358,1908,2256
+Amahuaca,Obesidad,44,21,13
+Amahuaca,Obesidad no especificada,13,6,6
+Amahuaca,Total,57,27,19
+Arabela,Obesidad,42,13,9
+Arabela,Obesidad no especificada,40,14,4
+Arabela,Total,82,27,13
+Ashaninka,Obesidad,2012,854,957
+Ashaninka,Obesidad no especificada,749,431,1026
+Ashaninka,Total,2761,1285,1983
+Asheninka,Obesidad,264,124,117
+Asheninka,Obesidad no especificada,118,63,141
+Asheninka,Total,382,187,258
+Awajún,Obesidad,1351,607,952
+Awajún,Obesidad no especificada,378,252,658
+Awajún,Total,1729,859,1610
+Bora,Obesidad,95,30,24
+Bora,Obesidad no especificada,18,17,16
+Bora,Total,113,47,40
+Capanahua,Obesidad,25,8,9
+Capanahua,Obesidad no especificada,11,10,6
+Capanahua,Total,36,18,15
+Cashinahua,Obesidad,63,22,23
+Cashinahua,Obesidad no especificada,10,13,11
+Cashinahua,Total,73,35,34
+Chamicuro,Obesidad,1,1,-
+Chamicuro,Obesidad no especificada,-,-,1
+Chamicuro,Total,1,1,1
+Chapra,Obesidad,19,10,7
+Chapra,Obesidad no especificada,20,5,8
+Chapra,Total,39,15,15
+Ese Eja,Obesidad,35,16,11
+Ese Eja,Obesidad no especificada,11,3,10
+Ese Eja,Total,46,19,21
+Harakbut,Obesidad,65,22,28
+Harakbut,Obesidad no especificada,20,13,17
+Harakbut,Total,85,35,45
+Ikitu,Obesidad,21,11,6
+Ikitu,Obesidad no especificada,7,4,7
+Ikitu,Total,28,15,13
+Iñapari,Obesidad,-,-,-
+Iñapari,Obesidad no especificada,-,-,1
+Iñapari,Total,-,-,1
+Isconahua,Obesidad,5,-,3
+Isconahua,Obesidad no especificada,1,-,3
+Isconahua,Total,6,-,6
+Jaqaru,Obesidad,25,5,10
+Jaqaru,Obesidad no especificada,10,3,9
+Jaqaru,Total,35,8,19
+Jíbaro,Obesidad,5,1,3
+Jíbaro,Obesidad no especificada,2,-,4
+Jíbaro,Total,7,1,7
+Kakataibo,Obesidad,36,25,18
+Kakataibo,Obesidad no especificada,14,14,35
+Kakataibo,Total,50,39,53
+Kandozi,Obesidad,105,42,42
+Kandozi,Obesidad no especificada,42,16,51
+Kandozi,Total,147,58,93
+Kichwa,Obesidad,2200,948,1248
+Kichwa,Obesidad no especificada,669,431,881
+Kichwa,Total,2869,1379,2129
+Kukama Kukamiria,Obesidad,691,257,326
+Kukama Kukamiria,Obesidad no especificada,172,112,233
+Kukama Kukamiria,Total,863,369,559
+Madija,Obesidad,1,-,-
+Madija,Obesidad no especificada,-,-,1
+Madija,Total,1,-,1
+Maijuna,Obesidad,6,4,2
+Maijuna,Obesidad no especificada,2,1,2
+Maijuna,Total,8,5,4
+Marinahua,Obesidad,2,2,3
+Marinahua,Obesidad no especificada,3,1,-
+Marinahua,Total,5,3,3
+Mashco Piro,Obesidad,1,1,2
+Mashco Piro,Obesidad no especificada,2,-,-
+Mashco Piro,Total,3,1,2
+Mastanahua,Obesidad,2,4,3
+Mastanahua,Obesidad no especificada,4,-,-
+Mastanahua,Total,6,4,3
+Matsés,Obesidad,43,15,10
+Matsés,Obesidad no especificada,4,5,8
+Matsés,Total,47,20,18
+Matsigenka,Obesidad,278,92,109
+Matsigenka,Obesidad no especificada,81,38,71
+Matsigenka,Total,359,130,180
+Muniche,Obesidad,3,2,6
+Muniche,Obesidad no especificada,4,-,4
+Muniche,Total,7,2,10
+Murui-Muinani,Obesidad,33,18,22
+Murui-Muinani,Obesidad no especificada,10,10,13
+Murui-Muinani,Total,43,28,35
+Nahua,Obesidad,5,1,1
+Nahua,Obesidad no especificada,1,-,-
+Nahua,Total,6,1,1
+Nanti,Obesidad,4,2,-
+Nanti,Obesidad no especificada,1,-,2
+Nanti,Total,5,2,2
+Nomatsigenga,Obesidad,135,53,62
+Nomatsigenga,Obesidad no especificada,39,18,52
+Nomatsigenga,Total,174,71,114
+Ocaina,Obesidad,5,2,1
+Ocaina,Obesidad no especificada,-,-,2
+Ocaina,Total,5,2,3
+Omagua,Obesidad,9,3,7
+Omagua,Obesidad no especificada,3,3,1
+Omagua,Total,12,6,8
+Quechuas,Obesidad,72620,31481,29306
+Quechuas,Obesidad no especificada,29087,13360,20979
+Quechuas,Total,101707,44841,50285
+Secoya,Obesidad,16,10,9
+Secoya,Obesidad no especificada,3,1,-
+Secoya,Total,19,11,9
+Sharanahua,Obesidad,15,23,19
+Sharanahua,Obesidad no especificada,10,35,13
+Sharanahua,Total,25,58,32
+Shawi,Obesidad,72,25,55
+Shawi,Obesidad no especificada,14,20,44
+Shawi,Total,86,45,99
+Shipibo-Konibo,Obesidad,535,250,369
+Shipibo-Konibo,Obesidad no especificada,156,122,168
+Shipibo-Konibo,Total,691,372,537
+Shiwilu,Obesidad,3,2,13
+Shiwilu,Obesidad no especificada,-,1,7
+Shiwilu,Total,3,3,20
+Tikuna,Obesidad,47,82,9
+Tikuna,Obesidad no especificada,55,6,7
+Tikuna,Total,102,88,16
+Urarina,Obesidad,43,14,35
+Urarina,Obesidad no especificada,13,8,22
+Urarina,Total,56,22,57
+Uro,Obesidad,-,1,1
+Uro,Obesidad no especificada,-,-,-
+Uro,Total,-,1,1
+Vacacocha,Obesidad,4,2,1
+Vacacocha,Obesidad no especificada,1,-,-
+Vacacocha,Total,5,2,1
+Wampis,Obesidad,239,81,139
+Wampis,Obesidad no especificada,66,41,105
+Wampis,Total,305,122,244
+Yagua,Obesidad,113,44,48
+Yagua,Obesidad no especificada,25,18,31
+Yagua,Total,138,62,79
+Yaminahua,Obesidad,17,8,13
+Yaminahua,Obesidad no especificada,4,2,4
+Yaminahua,Total,21,10,17
+Yanesha,Obesidad,188,89,119
+Yanesha,Obesidad no especificada,47,21,43
+Yanesha,Total,235,110,162
+Yine,Obesidad,59,20,38
+Yine,Obesidad no especificada,27,10,15
+Yine,Total,86,30,53"
+
+data_raw <- read.csv(text = csv_data_obesidad, check.names = FALSE)
+
+# 2. LIMPIEZA
+clean_val <- function(x) {
+  x <- as.character(x)
+  as.numeric(ifelse(x == "-", 0, x))
+}
+
+data_clean <- data_raw %>%
+  mutate(across(c(`2019`, `2020`, `2021`), clean_val)) %>%
+  rowwise() %>%
+  mutate(Tendencia = list(c(`2019`, `2020`, `2021`))) %>%
+  ungroup() %>%
+  # Reordenar para que Tendencia salga antes de los años
+  select(Etnia, `Agrupación subcategorías`, Tendencia, everything())
+
+# 3. BARRA DE DATOS (Bar Chart dentro de celda)
+# Función para dibujar una barra proporcional
+bar_chart <- function(label, value, max_value = 101707, color = "#1d81a2") {
+  width <- paste0(value / max_value * 100, "%")
+  # Si el valor es muy pequeño, mostramos al menos 1px
+  if (value > 0 && value / max_value * 100 < 1) width <- "1px"
+  
+  # Contenedor flex para alinear número y barra
+  div(
+    style = "display: flex; align-items: center; justify-content: start;",
+    div(style = "width: 40px; text-align: right; margin-right: 8px; font-weight: bold;", label), # Número
+    div(style = paste0("width:", width, "; background-color:", color, "; height: 16px; transition: width 0.3s;")) # Barra
+  )
+}
+
+# 4. TABLA INTERACTIVA
+table_widget <- reactable(
+  data_clean,
+  groupBy = "Etnia", # Agrupamos por Etnia principal
+  pagination = TRUE,
+  searchable = TRUE,
+  striped = FALSE,
+  highlight = TRUE,
+  defaultPageSize = 20, # Más filas visibles
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#ffffff",
+      color = "#333",
+      fontWeight = "bold",
+      borderBottom = "2px solid #333",
+      fontSize = "13px"
+    ),
+    cellStyle = list(
+      fontFamily = "Roboto, Arial, sans-serif",
+      fontSize = "13px",
+      verticalAlign = "middle"
+    ),
+    # Estilo de la fila de grupo (Etnia)
+    rowGroupStyle = list(fontWeight = "bold", backgroundColor = "#f9f9f9")
+  ),
+  columns = list(
+    Etnia = colDef(minWidth = 150),
+    
+    `Agrupación subcategorías` = colDef(name = "Subcategoría", minWidth = 180),
+    
+    # Columna de Tendencia
+    Tendencia = colDef(
+      name = "Tendencia",
+      minWidth = 80,
+      align = "center",
+      cell = function(value) {
+        sparkline(value, type = "line", width = 60, height = 20, 
+                  lineColor = "#000", fillColor = FALSE, lineWidth = 1.5,
+                  minSpotColor = "#ff0000", maxSpotColor = "#1d81a2", spotRadius = 2)
+      }
+    ),
+    
+    # Columnas de años con Barras
+    `2019` = colDef(
+      name = "2019",
+      minWidth = 120,
+      cell = function(value) bar_chart(value, value, color = "#fefaca") # Amarillo pálido
+    ),
+    `2020` = colDef(
+      name = "2020",
+      minWidth = 120,
+      cell = function(value) bar_chart(value, value, color = "#a1d99b") # Verde claro
+    ),
+    `2021` = colDef(
+      name = "2021",
+      minWidth = 120,
+      cell = function(value) bar_chart(value, value, color = "#008b15") # Verde intenso
+    )
+  )
+)
+
+# 5. RENDERIZADO
+browsable(
+  tagList(
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; color: #333; margin-bottom: 10px;",
+      h3("Obesidad por etnias en el Perú 2019-2021", 
+         style = "font-weight: 700; margin-bottom: 5px; font-size: 18px;"),
+      p("Desglose por subcategoría (Obesidad vs No especificada).",
+        style = "font-size: 12px; color: #666; margin-top:0;")
+    ),
+    table_widget %>% spk_add_deps()
+  )
+)
+```
+
+## Data Fuente
+
+```{r}
+make_download_table(data_clean, filename_label = "obesidad_etnias")
+```
+:::
+
+## **Obesidad en población afroperuana 2019-2021**
+
+
+::: panel-tabset
+## Gráfico
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sparkline)
+
+# 1. DATOS (Extraídos de data-nFFH0.csv)
+csv_data_obesidad_afro <- "Subcategorías,2019,2020,2021
+Obesidad debida a exceso de calorías,125,84,125
+Obesidad Extrema con Hipoventilación Alveolar,-,1,-
+Obesidad No Especificada,70,33,105
+Obesidad Grado I,1,8,3
+Obesidad Grado II,2,3,1
+Obesidad Grado III,-,2,2"
+
+data_raw <- read.csv(text = csv_data_obesidad_afro, check.names = FALSE)
+
+# 2. LIMPIEZA
+clean_val <- function(x) {
+  x <- as.character(x)
+  # Convertir "-" a 0 para poder graficar
+  as.numeric(ifelse(x == "-", 0, x))
+}
+
+data_clean <- data_raw %>%
+  mutate(across(c(`2019`, `2020`, `2021`), clean_val)) %>%
+  rowwise() %>%
+  mutate(Tendencia = list(c(`2019`, `2020`, `2021`))) %>%
+  ungroup() %>%
+  select(`Subcategorías`, Tendencia, everything())
+
+# 3. FUNCIÓN DE BARRA PROPORCIONAL
+bar_chart <- function(label, value, max_value = 125, color = "#18a1cd") {
+  # Calcular ancho relativo
+  width <- if (max_value > 0) paste0(value / max_value * 100, "%") else "0%"
+  if (value > 0 && value / max_value * 100 < 1) width <- "1px"
+  
+  # Formatear etiqueta (mostrar "-" si es 0)
+  display_label <- if (value == 0) "-" else as.character(value)
+  
+  div(
+    style = "display: flex; align-items: center; justify-content: start;",
+    div(style = "width: 30px; text-align: right; margin-right: 8px; font-weight: bold; font-size: 12px;", display_label),
+    div(style = paste0("width:", width, "; background-color:", color, "; height: 14px; transition: width 0.3s;"))
+  )
+}
+
+# 4. TABLA INTERACTIVA
+table_widget <- reactable(
+  data_clean,
+  pagination = FALSE, # Pocas filas, no hace falta paginar
+  searchable = FALSE,
+  striped = TRUE,
+  highlight = TRUE,
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#ffffff",
+      color = "#333",
+      fontWeight = "bold",
+      borderBottom = "2px solid #333",
+      fontSize = "13px"
+    ),
+    cellStyle = list(
+      fontFamily = "Roboto, Arial, sans-serif",
+      fontSize = "13px",
+      verticalAlign = "middle"
+    )
+  ),
+  columns = list(
+    `Subcategorías` = colDef(minWidth = 200, style = list(fontWeight = "bold")),
+    
+    Tendencia = colDef(
+      minWidth = 80,
+      align = "center",
+      cell = function(value) {
+        sparkline(value, type = "line", width = 60, height = 20, 
+                  lineColor = "#1d81a2", # Azul Datawrapper
+                  fillColor = "#d6eff7", # Relleno suave
+                  lineWidth = 1.5,
+                  spotColor = FALSE, minSpotColor = FALSE, maxSpotColor = FALSE,
+                  spotRadius = 2)
+      }
+    ),
+    
+    `2019` = colDef(
+      name = "2019",
+      minWidth = 100,
+      cell = function(value) bar_chart(value, value, color = "#18a1cd") # Azul claro
+    ),
+    `2020` = colDef(
+      name = "2020",
+      minWidth = 100,
+      cell = function(value) bar_chart(value, value, color = "#1d81a2") # Azul medio
+    ),
+    `2021` = colDef(
+      name = "2021",
+      minWidth = 100,
+      cell = function(value) bar_chart(value, value, color = "#15607a") # Azul oscuro
+    )
+  )
+)
+
+# 5. RENDERIZADO
+browsable(
+  tagList(
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; color: #333; margin-bottom: 15px;",
+      h3("Obesidad en población afroperuana 2019-2021", 
+         style = "font-weight: 700; margin-bottom: 5px; font-size: 18px;"),
+      p("Distribución por subcategoría de diagnóstico.",
+        style = "font-size: 12px; color: #666; margin-top:0;")
+    ),
+    table_widget %>% spk_add_deps()
+  )
+)
+```
+
+
+## Data Fuente
+
+```{r}
+make_download_table(data_clean, filename_label = "obesidad_afrodescendientes")
+```
+:::
+
+La población afroperuana registró los menores casos de obesidad en comparación de las poblaciones indígenas. Según las clasificaciones de obesidad, guiándonos del CIE10, la subcategoría: obesidad debida a exceso de calorías, es la que tiene mayor cantidad de registros, en los tres años analizados, alcanzando más del 60%, el 2019 y 2020. Es seguido por la subcategoría Obesidad No Especificada que el 2021 representó más del 40%.
+
+
+::: panel-tabset
+## Gráfico
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-height: 8
+#| fig-width: 9
+
+library(tidyverse)
+library(plotly)
+library(scales)
+library(htmltools)
+
+# 1. CARGA DE DATOS
+csv_data_sexo <- "Año,Agrupación de subcategorías,M,F
+2019,Obesidad,33,92
+2019,Obesidad no especificada,13,60
+2019,Total,46,152
+2020,Obesidad,36,49
+2020,Obesidad no especificada,11,35
+2020,Total,47,84
+2021,Obesidad,47,78
+2021,Obesidad no especificada,33,78
+2021,Total,80,156"
+
+data_raw <- read.csv(text = csv_data_sexo, check.names = FALSE)
+
+# 2. TRANSFORMACIÓN
+plot_data <- data_raw %>%
+  filter(`Agrupación de subcategorías` != "Total") %>% 
+  pivot_longer(cols = c("M", "F"), names_to = "Sexo", values_to = "Casos") %>%
+  mutate(
+    Casos_Plot = ifelse(Sexo == "M", -Casos, Casos),
+    Año = factor(Año, levels = c(2021, 2020, 2019)),
+    Categoria = factor(`Agrupación de subcategorías`),
+    Tooltip_Text = paste0(
+      "<b>", Categoria, "</b><br>",
+      "Año: ", Año, "<br>",
+      "Sexo: ", ifelse(Sexo == "M", "Masculino", "Femenino"), "<br>",
+      "Casos: ", format(Casos, big.mark = " ")
+    )
+  )
+
+# 3. COLORES SOLICITADOS
+# Azul para Varones, Rosa para Mujeres
+color_male <- "#1f77b4"  # Azul clásico
+color_female <- "#e377c2" # Rosa/Fucsia
+
+# 4. GRÁFICO BASE
+g_piramide <- ggplot(plot_data, aes(x = Año, y = Casos_Plot, fill = Sexo)) +
+  geom_col(aes(text = Tooltip_Text), width = 0.7) +
+  coord_flip() +
+  facet_wrap(~Categoria, ncol = 1, scales = "free_x") + 
+  scale_fill_manual(values = c("M" = color_male, "F" = color_female), 
+                    labels = c("M" = "Varones", "F" = "Mujeres")) +
+  scale_y_continuous(
+    labels = function(x) number(abs(x), big.mark = " "),
+    n.breaks = 5
+  ) +
+  labs(x = "", y = "", fill = "") +
+  theme_minimal() +
+  theme(
+    strip.text = element_text(face = "bold", size = 12, color = "#333", hjust = 0),
+    strip.background = element_rect(fill = "#f0f0f0", color = NA),
+    panel.grid.major.y = element_blank(),
+    legend.position = "top"
+  )
+
+# 5. INTERACTIVIDAD
+p <- ggplotly(g_piramide, tooltip = "text", height = 550) %>%
+  layout(
+    legend = list(orientation = "h", xanchor = "right", x = 0.5, y = 1.1),
+    margin = list(t = 50, l = 70, b = 20)
+  )
+
+# Ajuste de simetría en ejes
+for(i in seq_along(p$x$layout)) {
+  if(grepl("xaxis", names(p$x$layout)[i])) {
+    current_range <- p$x$layout[[i]]$range
+    max_abs <- max(abs(current_range))
+    p$x$layout[[i]]$range <- c(-max_abs, max_abs)
+  }
+}
+
+# 6. RENDERIZADO FINAL CON TÍTULO Y PIE DE GRÁFICO
+browsable(
+  tagList(
+    # Título
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; color: #333; margin-bottom: 20px;",
+      h3("Obesidad en población afroperuana por sexo 2019-2021", 
+         style = "font-weight: 700; font-size: 20px; margin-bottom: 5px;"),
+      p("Comparativo de casos reportados entre varones y mujeres por subcategoría.", 
+        style = "font-size: 14px; color: #666; margin-top: 0;")
+    ),
+    
+    # Gráfico
+    p %>% config(displayModeBar = FALSE),
+    
+    # Pie de Gráfico Detallado
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; font-size: 11px; color: #666; margin-top: 20px; line-height: 1.5; border-top: 1px solid #eee; padding-top: 10px;",
+      p("Considera los establecimientos de salud del MINSA, EsSalud, FFAA y policiales y privados.", style = "margin: 0 0 5px 0;"),
+      p(strong("Obesidad"), " considera las subcategorías: Obesidad debida a exceso de calorías, Obesidad extrema con hipoventilación.", style = "margin: 0 0 5px 0;"),
+      p(strong("Obesidad no especificada"), " además comprende: Obesidad Grado I, Obesidad Grado II y Obesidad Grado III.", style = "margin: 0;")
+    )
+  )
+)
+
+
+```
+
+## Data Fuente
+
+```{r}
+
+make_download_table(plot_data, filename_label = "obesidad_afro_sexo")
+```
+:::
+
+
+::: panel-tabset
+## Gráfico
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sparkline)
+
+# 1. DATOS (Extraídos de data-hn6PA.csv)
+csv_data_curso_vida <- "Categoría,curso de vida,2019,2020,2021
+Obesidad,01-11m,9,18,11
+Obesidad,01-05a,14,20,26
+Obesidad,06-11a,-,3,3
+Obesidad,12-17a,9,3,18
+Obesidad,18-29a,24,17,17
+Obesidad,30-59a,54,19,40
+Obesidad,60a >,15,5,10
+Obesidad,Subtotal,125,85,125
+Obesidad no especificada,01-11m,-,3,1
+Obesidad no especificada,01-05a,2,2,10
+Obesidad no especificada,06-11a,2,3,1
+Obesidad no especificada,12-17a,3,4,5
+Obesidad no especificada,18-29a,8,8,12
+Obesidad no especificada,30-59a,47,21,45
+Obesidad no especificada,60a >,11,5,37
+Obesidad no especificada,Subtotal,73,46,111"
+
+data_raw <- read.csv(text = csv_data_curso_vida, check.names = FALSE)
+
+# 2. LIMPIEZA
+clean_val <- function(x) {
+  x <- as.character(x)
+  suppressWarnings(as.numeric(ifelse(x == "-", 0, x)))
+}
+
+data_clean <- data_raw %>%
+  filter(`curso de vida` != "Subtotal") %>% # Excluir subtotales
+  mutate(across(c(`2019`, `2020`, `2021`), clean_val)) %>%
+  rowwise() %>%
+  mutate(Tendencia = list(c(`2019`, `2020`, `2021`))) %>%
+  ungroup() %>%
+  select(`Categoría`, `curso de vida`, Tendencia, everything())
+
+# 3. FUNCIÓN DE BARRA (Estilo Datawrapper Naranja)
+bar_chart <- function(label, value, max_value = 54, color = "#ff6343") {
+  width <- if (max_value > 0) paste0(value / max_value * 100, "%") else "0%"
+  if (value > 0 && value / max_value * 100 < 1) width <- "1px"
+  
+  display_label <- if (value == 0) "-" else as.character(value)
+  
+  div(
+    style = "display: flex; align-items: center; justify-content: start;",
+    div(style = "width: 25px; text-align: right; margin-right: 8px; font-weight: bold; font-size: 12px;", display_label),
+    div(style = paste0("width:", width, "; background-color:", color, "; height: 14px; transition: width 0.3s;"))
+  )
+}
+
+# 4. TABLA INTERACTIVA
+table_widget <- reactable(
+  data_clean,
+  groupBy = "Categoría", 
+  pagination = FALSE,
+  searchable = FALSE,
+  striped = TRUE,
+  highlight = TRUE,
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#ffffff",
+      color = "#333",
+      fontWeight = "bold",
+      borderBottom = "2px solid #333",
+      fontSize = "13px"
+    ),
+    cellStyle = list(
+      fontFamily = "Roboto, Arial, sans-serif",
+      fontSize = "13px",
+      verticalAlign = "middle"
+    ),
+    rowGroupStyle = list(fontWeight = "bold", backgroundColor = "#f0f0f0")
+  ),
+  columns = list(
+    `Categoría` = colDef(minWidth = 150),
+    `curso de vida` = colDef(name = "Curso de Vida", minWidth = 120),
+    
+    Tendencia = colDef(
+      minWidth = 80,
+      align = "center",
+      cell = function(value) {
+        sparkline(value, type = "line", width = 60, height = 20, 
+                  lineColor = "#d03c25", # Rojo oscuro
+                  fillColor = "#feebe2", 
+                  lineWidth = 1.5,
+                  spotColor = "#d03c25", minSpotColor = "#d03c25", maxSpotColor = "#d03c25",
+                  spotRadius = 2)
+      }
+    ),
+    
+    `2019` = colDef(
+      name = "2019",
+      minWidth = 100,
+      cell = function(value) bar_chart(value, value, color = "#ff6343") # Naranja claro
+    ),
+    `2020` = colDef(
+      name = "2020",
+      minWidth = 100,
+      cell = function(value) bar_chart(value, value, color = "#ee883e") # Naranja medio
+    ),
+    `2021` = colDef(
+      name = "2021",
+      minWidth = 100,
+      cell = function(value) bar_chart(value, value, color = "#d03c25") # Rojo oscuro
+    )
+  )
+)
+
+# 5. RENDERIZADO
+browsable(
+  tagList(
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; color: #333; margin-bottom: 15px;",
+      h3("Obesidad por curso de vida en población afroperuana 2019-2021", 
+         style = "font-weight: 700; margin-bottom: 5px; font-size: 18px;"),
+      p("Comparación por grupos de edad y tipo de diagnóstico.",
+        style = "font-size: 12px; color: #666; margin-top:0;")
+    ),
+    table_widget %>% spk_add_deps()
+  )
+)
+```
+
+## Data Fuente
+
+```{r}
+
+make_download_table(data_clean, filename_label = "obesidad_afro_edad")
+```
+
+:::
+
+Son los adultos de 30-59 años, quienes registran los mayores casos, seguido por los jóvenes de 18-29 años. Un grupo en crecimiento con esta morbilidad son los niños de 1 a 5 años.
+
+::: panel-tabset
+
+## Tabla dinámica
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sparkline)
+
+# 1. DATOS (Extraídos de data-spZPc.csv)
+csv_data_depto <- "Departamento,Agrupación subcategorías,2019,2020,2021
+Amazonas,Obesidad,-,3,-
+Amazonas,Obesidad no especificada,-,1,1
+Amazonas,Total,-,4,1
+Apurímac,Obesidad,10,4,4
+Apurímac,Obesidad no especificada,6,4,1
+Apurímac,Total,16,8,5
+Arequipa,Obesidad,9,2,10
+Arequipa,Obesidad no especificada,8,4,10
+Arequipa,Total,17,6,20
+Ayacucho,Obesidad,1,-,-
+Ayacucho,Obesidad no especificada,1,1,-
+Ayacucho,Total,2,1,-
+Cajamarca,Obesidad,4,-,1
+Cajamarca,Obesidad no especificada,1,-,-
+Cajamarca,Total,5,-,1
+Cusco,Obesidad,2,1,1
+Cusco,Obesidad no especificada,-,-,1
+Cusco,Total,2,1,2
+Huánuco,Obesidad,6,6,12
+Huánuco,Obesidad no especificada,1,1,2
+Huánuco,Total,7,7,14
+Ica,Obesidad,1,-,25
+Ica,Obesidad no especificada,1,-,10
+Ica,Total,2,-,35
+Junín,Obesidad,-,1,-
+Junín,Obesidad no especificada,1,-,-
+Junín,Total,1,1,-
+La Libertad,Obesidad,-,-,1
+La Libertad,Obesidad no especificada,-,-,1
+La Libertad,Total,-,-,2
+Lambayeque,Obesidad,-,1,1
+Lambayeque,Obesidad no especificada,1,-,2
+Lambayeque,Total,1,1,3
+Lima DIRIS Centro,Obesidad,1,-,2
+Lima DIRIS Centro,Obesidad no especificada,-,-,2
+Lima DIRIS Centro,Total,1,-,4
+Lima DIRIS Este,Obesidad,-,1,2
+Lima DIRIS Este,Obesidad no especificada,-,-,-
+Lima DIRIS Este,Total,-,1,2
+Lima DIRIS Norte,Obesidad,2,3,1
+Lima DIRIS Norte,Obesidad no especificada,2,-,4
+Lima DIRIS Norte,Total,4,3,5
+Lima Provincias,Obesidad,1,-,-
+Lima Provincias,Obesidad no especificada,-,-,-
+Lima Provincias,Total,1,-,-
+Madre De Dios,Obesidad,-,-,3
+Madre De Dios,Obesidad no especificada,-,-,-
+Madre De Dios,Total,-,-,3
+Pasco,Obesidad,-,-,3
+Pasco,Obesidad no especificada,1,-,4
+Pasco,Total,1,-,7
+Piura,Obesidad,55,16,19
+Piura,Obesidad no especificada,37,13,38
+Piura,Total,92,29,57
+Puno,Obesidad,-,1,-
+Puno,Obesidad no especificada,1,-,-
+Puno,Total,1,1,-
+Tacna,Obesidad,2,-,-
+Tacna,Obesidad no especificada,-,-,-
+Tacna,Total,2,-,-
+Tumbes,Obesidad,2,-,2
+Tumbes,Obesidad no especificada,-,-,2
+Tumbes,Total,2,-,4
+Ucayali,Obesidad,30,5,37
+Ucayali,Obesidad no especificada,9,9,28
+Ucayali,Total,39,14,65"
+
+data_raw <- read.csv(text = csv_data_depto, check.names = FALSE)
+
+# 2. LIMPIEZA DE DATOS
+clean_val <- function(x) {
+  x <- as.character(x)
+  suppressWarnings(as.numeric(ifelse(x == "-", 0, x)))
+}
+
+data_clean <- data_raw %>%
+  filter(`Agrupación subcategorías` != "Total") %>% # Opcional: mostrar solo detalle o todo
+  mutate(across(c(`2019`, `2020`, `2021`), clean_val)) %>%
+  rowwise() %>%
+  mutate(Tendencia = list(c(`2019`, `2020`, `2021`))) %>%
+  ungroup() %>%
+  select(Departamento, `Agrupación subcategorías`, Tendencia, everything())
+
+# 3. PALETA DE COLORES (Datawrapper "OrRd" style -> Blue/Purple)
+# Gradiente: Crema -> Naranja -> Rojo -> Violeta Oscuro
+get_color_heatmap <- function(value) {
+  if (is.na(value) || value == 0) return("#ffffff")
+  
+  max_val <- 55 # Máximo observado (Piura 2019: 55)
+  normalized <- min(value / max_val, 1)
+  
+  f_color <- colorRamp(c("#fcfcbe", "#fdc78d", "#e45563", "#ac337b", "#2c1160")) 
+  rgb_val <- f_color(normalized)
+  rgb(rgb_val[1], rgb_val[2], rgb_val[3], maxColorValue = 255)
+}
+
+get_text_color <- function(value) {
+  if (is.na(value)) return("#000")
+  # Texto blanco para fondos oscuros (valores altos)
+  if (value > 20) "#ffffff" else "#000000"
+}
+
+# 4. TABLA INTERACTIVA
+table_widget <- reactable(
+  data_clean,
+  groupBy = "Departamento",
+  pagination = TRUE,
+  searchable = TRUE,
+  striped = FALSE,
+  highlight = TRUE,
+  defaultPageSize = 20,
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#1d81a2", # Azul cabecera Datawrapper
+      color = "#ffffff",
+      fontWeight = "bold",
+      borderBottom = "2px solid #333",
+      fontSize = "13px"
+    ),
+    cellStyle = list(
+      fontFamily = "Roboto, Arial, sans-serif",
+      fontSize = "13px",
+      verticalAlign = "middle"
+    ),
+    rowGroupStyle = list(fontWeight = "bold", backgroundColor = "#f9f9f9")
+  ),
+  columns = list(
+    Departamento = colDef(minWidth = 150),
+    `Agrupación subcategorías` = colDef(name = "Subcategoría", minWidth = 180),
+    
+    Tendencia = colDef(
+      minWidth = 100,
+      align = "center",
+      cell = function(value) {
+        sparkline(value, type = "line", width = 80, height = 25, 
+                  lineColor = "#18a1cd", # Azul claro Datawrapper
+                  fillColor = "#d1e5f0", # Relleno suave
+                  lineWidth = 2,
+                  spotColor = "#2c1160", minSpotColor = "#2c1160", maxSpotColor = "#2c1160",
+                  spotRadius = 2)
+      }
+    ),
+    
+    `2019` = colDef(width = 60, style = function(v) list(background = get_color_heatmap(v), color = get_text_color(v), fontWeight = "bold")),
+    `2020` = colDef(width = 60, style = function(v) list(background = get_color_heatmap(v), color = get_text_color(v), fontWeight = "bold")),
+    `2021` = colDef(width = 60, style = function(v) list(background = get_color_heatmap(v), color = get_text_color(v), fontWeight = "bold"))
+  )
+)
+
+# 5. RENDERIZADO
+browsable(
+  tagList(
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; color: #333; margin-bottom: 10px;",
+      h3("Obesidad en población afroperuana por departamentos 2019-2021", 
+         style = "font-weight: 700; margin-bottom: 5px; font-size: 18px;"),
+      p("En el ámbito de intervención de las DIRIS y DIRESA.",
+        style = "font-size: 12px; color: #666; margin-top:0;")
+    ),
+    table_widget %>% spk_add_deps()
+  )
+)
+```
+
+## Data Fuente
+
+```{r}
+
+make_download_table(data_clean, filename_label = "obesidad_afro_regiones")
+```
+
+:::
+
+Piura e Ica son las regiones con los mayores registros el 2019 con 91 y 56 casos, respectivamente y el 2020, 62 y 34 casos, respectivamente. El 2021 son Piura, Arequipa e Ica, 167, 20 y 17, respectivamente
+
+
+## **Obesidad en poblaciones amazónicas 2019-2021**
+
+::: panel-tabset
+
+## Gráfico
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sparkline)
+
+# 1. DATOS (Extraídos de data-MZzba.csv)
+csv_data_obesidad_gen <- "Subcategorías,2019,2020,2021
+Obesidad debida a exceso de calorías,5728,2790,3446
+Obesidad inducida por drogas,3,4,4
+Obesidad extrema con hipoventilación,1,2,3
+Otros tipos de obesidad,7,14,27
+Obesidad No Especificada,2075,1102,2016
+Obesidad Grado I,-,113,319
+Obesidad Grado II,73,42,67
+Obesidad Grado III,22,6,18"
+
+data_raw <- read.csv(text = csv_data_obesidad_gen, check.names = FALSE)
+
+# 2. LIMPIEZA
+clean_val <- function(x) {
+  x <- as.character(x)
+  # Convertir "-" a 0
+  suppressWarnings(as.numeric(ifelse(x == "-", 0, x)))
+}
+
+data_clean <- data_raw %>%
+  mutate(across(c(`2019`, `2020`, `2021`), clean_val)) %>%
+  rowwise() %>%
+  mutate(Tendencia = list(c(`2019`, `2020`, `2021`))) %>%
+  ungroup() %>%
+  select(`Subcategorías`, Tendencia, everything())
+
+# Calcular el valor máximo global para escalar las barras correctamente
+max_val_dataset <- max(data_clean %>% select(`2019`, `2020`, `2021`), na.rm = TRUE)
+
+# 3. FUNCIÓN DE BARRA PROPORCIONAL
+bar_chart <- function(label, value, max_value, color) {
+  # Calcular ancho relativo
+  width <- if (max_value > 0) paste0(value / max_value * 100, "%") else "0%"
+  if (value > 0 && value / max_value * 100 < 1) width <- "1px"
+  
+  display_label <- if (value == 0) "-" else format(value, big.mark = ",")
+  
+  div(
+    style = "display: flex; align-items: center; justify-content: start;",
+    div(style = "width: 45px; text-align: right; margin-right: 8px; font-weight: bold; font-size: 12px;", display_label),
+    div(style = paste0("width:", width, "; background-color:", color, "; height: 14px; transition: width 0.3s; border-radius: 2px;"))
+  )
+}
+
+# 4. TABLA INTERACTIVA
+table_widget <- reactable(
+  data_clean,
+  pagination = FALSE,
+  searchable = FALSE,
+  striped = TRUE,
+  highlight = TRUE,
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#ffffff",
+      color = "#333",
+      fontWeight = "bold",
+      borderBottom = "2px solid #333",
+      fontSize = "13px"
+    ),
+    cellStyle = list(
+      fontFamily = "Roboto, Arial, sans-serif",
+      fontSize = "13px",
+      verticalAlign = "middle"
+    )
+  ),
+  columns = list(
+    `Subcategorías` = colDef(minWidth = 220, style = list(fontWeight = "bold")),
+    
+    Tendencia = colDef(
+      minWidth = 80,
+      align = "center",
+      cell = function(value) {
+        sparkline(value, type = "line", width = 60, height = 20, 
+                  lineColor = "#006d5b", # Verde azulado oscuro
+                  fillColor = "#e0f2f1", # Fondo suave
+                  lineWidth = 1.5,
+                  spotColor = "#006d5b", minSpotColor = "#006d5b", maxSpotColor = "#006d5b",
+                  spotRadius = 2)
+      }
+    ),
+    
+    `2019` = colDef(
+      name = "2019",
+      minWidth = 120,
+      # Pasamos max_val_dataset explícitamente para que la escala sea global
+      cell = function(value) bar_chart(value, value, max_value = max_val_dataset, color = "#80cdc1") 
+    ),
+    `2020` = colDef(
+      name = "2020",
+      minWidth = 120,
+      cell = function(value) bar_chart(value, value, max_value = max_val_dataset, color = "#35978f") 
+    ),
+    `2021` = colDef(
+      name = "2021",
+      minWidth = 120,
+      cell = function(value) bar_chart(value, value, max_value = max_val_dataset, color = "#01665e") # Verde más oscuro
+    )
+  )
+)
+
+# 5. RENDERIZADO
+browsable(
+  tagList(
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; color: #333; margin-bottom: 15px;",
+      h3("Detalle de Obesidad por Subcategorías (2019-2021)", 
+         style = "font-weight: 700; margin-bottom: 5px; font-size: 18px;"),
+      p("Comparación del volumen de casos reportados según clasificación específica.",
+        style = "font-size: 12px; color: #666; margin-top:0;")
+    ),
+    table_widget %>% spk_add_deps()
+  )
+)
+```
+
+## Data Fuente
+
+```{r}
+
+make_download_table(data_clean, filename_label = "obesidad_amazonicas")
+```
+:::
+
+En las etnias amazónicas, la subcategoría Obesidad debida a exceso de calorías, presenta los mayores casos desde el 2019 al 2021, especialmente el 2019 alcanzó más del 70% de los casos, el 2020, 68% y el 2021, el 58% del total de casos.
+
+::: panel-tabset
+
+## Gráfico
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-height: 8
+#| fig-width: 9
+
+library(tidyverse)
+library(plotly)
+library(scales)
+library(htmltools)
+
+# 1. CARGA DE DATOS (Adaptado para data-lhCJP.csv)
+csv_data_new <- "Año,Agrupación de subcategorías,M,F
+2019,Obesidad,1600,4139
+2019,Obesidad no especificada,470,1700
+2019,Total,2070,5839
+2020,Obesidad,673,2137
+2020,Obesidad no especificada,314,949
+2020,Total,987,3086
+2021,Obesidad,773,2707
+2021,Obesidad no especificada,703,1717
+2021,Total,1476,4424"
+
+data_raw <- read.csv(text = csv_data_new, check.names = FALSE)
+
+# 2. TRANSFORMACIÓN
+plot_data <- data_raw %>%
+  # Excluir totales si se desea visualizar solo las categorías específicas
+  filter(`Agrupación de subcategorías` != "Total") %>% 
+  pivot_longer(cols = c("M", "F"), names_to = "Sexo", values_to = "Casos") %>%
+  mutate(
+    # Lógica de Pirámide: Hombres negativos
+    Casos_Plot = ifelse(Sexo == "M", -Casos, Casos),
+    
+    # Factores para orden
+    Año = factor(Año, levels = c(2021, 2020, 2019)), # Orden inverso para que 2019 salga arriba o abajo según coord_flip
+    Categoria = factor(`Agrupación de subcategorías`),
+    
+    # Texto para Tooltip
+    Tooltip_Text = paste0(
+      "<b>", Categoria, "</b><br>",
+      "Año: ", Año, "<br>",
+      "Sexo: ", ifelse(Sexo == "M", "Masculino", "Femenino"), "<br>",
+      "Casos: ", format(Casos, big.mark = " ")
+    )
+  )
+
+# 3. COLORES SOLICITADOS (NO CAMBIAR)
+# Azul para Varones, Rosa para Mujeres
+color_male <- "#1f77b4"  # Azul clásico
+color_female <- "#e377c2" # Rosa/Fucsia
+
+# 4. GRÁFICO BASE
+g_piramide <- ggplot(plot_data, aes(x = Año, y = Casos_Plot, fill = Sexo)) +
+  geom_col(aes(text = Tooltip_Text), width = 0.7) +
+  
+  coord_flip() +
+  
+  # Facetas por Categoría (Obesidad vs No especificada)
+  facet_wrap(~Categoria, ncol = 1, scales = "free_x") + 
+  
+  scale_fill_manual(values = c("M" = color_male, "F" = color_female), 
+                    labels = c("M" = "Varones", "F" = "Mujeres")) +
+  
+  # Eje Y Simétrico (Valores positivos visualmente)
+  scale_y_continuous(
+    labels = function(x) number(abs(x), big.mark = " "),
+    n.breaks = 5
+  ) +
+  
+  labs(
+    x = "",
+    y = "Número de Casos",
+    fill = ""
+  ) +
+  
+  theme_minimal() +
+  theme(
+    strip.text = element_text(face = "bold", size = 12, color = "#333", hjust = 0),
+    strip.background = element_rect(fill = "#f0f0f0", color = NA),
+    panel.grid.major.y = element_blank(),
+    legend.position = "top"
+  )
+
+# 5. INTERACTIVIDAD
+p <- ggplotly(g_piramide, tooltip = "text", height = 550) %>%
+  layout(
+    legend = list(orientation = "h", xanchor = "center", x = 0.5, y = 1.1),
+    margin = list(t = 50, l = 70, b = 20)
+  )
+
+# --- CORRECCIÓN DE CERO CENTRADO ---
+# Forzar que el rango del eje X en cada faceta sea simétrico [-max, +max]
+for(i in seq_along(p$x$layout)) {
+  if(grepl("xaxis", names(p$x$layout)[i])) {
+    current_range <- p$x$layout[[i]]$range
+    max_abs <- max(abs(current_range))
+    p$x$layout[[i]]$range <- c(-max_abs, max_abs)
+  }
+}
+
+# 6. RENDERIZADO FINAL CON TÍTULO Y PIE DE GRÁFICO
+browsable(
+  tagList(
+    # Título
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; color: #333; margin-bottom: 20px;",
+      h3("Obesidad en población general por sexo 2019-2021", # Título ajustado al nuevo dataset
+         style = "font-weight: 700; font-size: 20px; margin-bottom: 5px;"),
+      p("Comparativo de casos reportados entre varones y mujeres por subcategoría.", 
+        style = "font-size: 14px; color: #666; margin-top: 0;")
+    ),
+    
+    # Gráfico
+    p %>% config(displayModeBar = FALSE),
+    
+    # Pie de Gráfico Detallado
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; font-size: 11px; color: #666; margin-top: 20px; line-height: 1.5; border-top: 1px solid #eee; padding-top: 10px;",
+      p("Considera los establecimientos de salud del MINSA, EsSalud, FFAA y policiales y privados.", style = "margin: 0 0 5px 0;"),
+      p(strong("Obesidad"), " considera las subcategorías: Obesidad debida a exceso de calorías, Obesidad extrema con hipoventilación.", style = "margin: 0 0 5px 0;"),
+      p(strong("Obesidad no especificada"), " además comprende: Obesidad Grado I, Obesidad Grado II y Obesidad Grado III.", style = "margin: 0;")
+    )
+  )
+)
+```
+
+## Datos Fuente
+
+```{r}
+make_download_table(plot_data, "obesidad_amazonicos_sexo")
+```
+
+:::
+
+Las mujeres son quienes tienen mayores registros de casos de obesidad casi el triple al registrado por los hombres, tanto el 2019 y el 2021; el 2020 fue más del triple.
+
+
+::: panel-tabset
+
+##Gráfico
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sparkline)
+
+# 1. DATOS (Extraídos de data-vX5wr.csv)
+csv_data_obesidad_gral <- "Categoría,curso de vida,2019,2020,2021
+Obesidad,< 01m,64,24,38
+Obesidad,01-11m,329,165,202
+Obesidad,01-05a,183,106,91
+Obesidad,06-11a,187,85,68
+Obesidad,12-17a,313,163,295
+Obesidad,18-29a,1354,778,1084
+Obesidad,30-59a,2921,1348,1536
+Obesidad,60a >,388,141,166
+Obesidad,Subtotal,5739,2810,3480
+Obesidad no especificada,< 01m,16,2,5
+Obesidad no especificada,01-11m,60,46,77
+Obesidad no especificada,01-05a,60,46,271
+Obesidad no especificada,06-11a,57,57,485
+Obesidad no especificada,12-17a,63,27,57
+Obesidad no especificada,18-29a,427,246,360
+Obesidad no especificada,30-59a,1299,773,1025
+Obesidad no especificada,60a >,93,52,70
+Obesidad no especificada,Subtotal,2075,1249,2350"
+
+data_raw <- read.csv(text = csv_data_obesidad_gral, check.names = FALSE)
+
+# 2. LIMPIEZA Y TRANSFORMACIÓN
+clean_val <- function(x) {
+  x <- as.character(x)
+  suppressWarnings(as.numeric(ifelse(x == "-", 0, x)))
+}
+
+data_clean <- data_raw %>%
+  filter(`curso de vida` != "Subtotal") %>% # Excluir subtotales
+  mutate(across(c(`2019`, `2020`, `2021`), clean_val)) %>%
+  rowwise() %>%
+  mutate(Tendencia = list(c(`2019`, `2020`, `2021`))) %>%
+  ungroup() %>%
+  select(`Categoría`, `curso de vida`, Tendencia, everything())
+
+# 3. FUNCIÓN DE BARRA PROPORCIONAL
+# Calculamos el máximo global para que la escala sea consistente en toda la tabla
+max_val_global <- max(data_clean %>% select(`2019`, `2020`, `2021`), na.rm = TRUE)
+
+bar_chart <- function(label, value, color) {
+  # Calcular ancho relativo al máximo global (2921)
+  width <- if (max_val_global > 0) paste0(value / max_val_global * 100, "%") else "0%"
+  if (value > 0 && value / max_val_global * 100 < 1) width <- "1px"
+  
+  display_label <- format(value, big.mark = ",")
+  
+  div(
+    style = "display: flex; align-items: center; justify-content: start;",
+    div(style = "width: 40px; text-align: right; margin-right: 8px; font-weight: bold; font-size: 12px;", display_label),
+    div(style = paste0("width:", width, "; background-color:", color, "; height: 14px; transition: width 0.3s;"))
+  )
+}
+
+# 4. TABLA INTERACTIVA
+table_widget <- reactable(
+  data_clean,
+  groupBy = "Categoría",
+  pagination = FALSE,
+  searchable = FALSE,
+  striped = TRUE,
+  highlight = TRUE,
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#ffffff",
+      color = "#333",
+      fontWeight = "bold",
+      borderBottom = "2px solid #333",
+      fontSize = "13px"
+    ),
+    cellStyle = list(
+      fontFamily = "Roboto, Arial, sans-serif",
+      fontSize = "13px",
+      verticalAlign = "middle"
+    ),
+    rowGroupStyle = list(fontWeight = "bold", backgroundColor = "#f0f0f0")
+  ),
+  columns = list(
+    `Categoría` = colDef(minWidth = 150),
+    `curso de vida` = colDef(name = "Curso de Vida", minWidth = 120),
+    
+    Tendencia = colDef(
+      minWidth = 80,
+      align = "center",
+      cell = function(value) {
+        sparkline(value, type = "line", width = 60, height = 20, 
+                  lineColor = "#d03c25", # Rojo Oscuro
+                  fillColor = "#feebe2", 
+                  lineWidth = 1.5,
+                  spotColor = "#d03c25", minSpotColor = "#d03c25", maxSpotColor = "#d03c25",
+                  spotRadius = 2)
+      }
+    ),
+    
+    `2019` = colDef(
+      name = "2019",
+      minWidth = 120,
+      cell = function(value) bar_chart(value, value, color = "#ff6343") # Naranja Claro
+    ),
+    `2020` = colDef(
+      name = "2020",
+      minWidth = 120,
+      cell = function(value) bar_chart(value, value, color = "#ee883e") # Naranja Medio
+    ),
+    `2021` = colDef(
+      name = "2021",
+      minWidth = 120,
+      cell = function(value) bar_chart(value, value, color = "#d03c25") # Rojo Oscuro
+    )
+  )
+)
+
+# 5. RENDERIZADO
+browsable(
+  tagList(
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; color: #333; margin-bottom: 15px;",
+      h3("Obesidad por curso de vida (2019-2021)", 
+         style = "font-weight: 700; margin-bottom: 5px; font-size: 18px;"),
+      p("Comparación de casos reportados según grupo etario.",
+        style = "font-size: 12px; color: #666; margin-top:0;")
+    ),
+    table_widget %>% spk_add_deps()
+  )
+)
+```
+
+## Datos Fuente
+
+```{r}
+make_download_table(data_clean, "obesidad_amazonicos_edad")
+```
+:::
+
+Los mayores registros de obesidad se dan en los adultos de 30 a 59 años y en los jóvenes de 18 a 29 años. El 2021 se observa mayor incremento de casos en niños de 6 a 11 años y de 1 a 5 años.
+
+::: panel-tabset
+
+## Tabla dinámica
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sparkline)
+
+# 1. DATOS (Extraídos de data-711aw.csv)
+csv_data_depto <- "Departamento,Agrupación subcategorías*,X.1,X.2,X.3,2019,2020,2021
+Amazonas,Obesidad,887,313,348,887,313,348
+Amazonas,Obesidad no especificada,249,127,206,249,127,206
+Amazonas,Total,1136,440,554,1136,440,554
+Ancash,Obesidad,11,8,7,11,8,7
+Ancash,Obesidad no especificada,9,2,3,9,2,3
+Ancash,Total,20,10,10,20,10,10
+Apurímac,Obesidad,19,5,6,19,5,6
+Apurímac,Obesidad no especificada,3,3,6,3,3,6
+Apurímac,Total,22,8,12,22,8,12
+Arequipa,Obesidad,13,6,18,13,6,18
+Arequipa,Obesidad no especificada,9,6,11,9,6,11
+Arequipa,Total,22,12,29,22,12,29
+Ayacucho,Obesidad,27,13,26,27,13,26
+Ayacucho,Obesidad no especificada,12,7,17,12,7,17
+Ayacucho,Total,39,20,43,39,20,43
+Cajamarca,Obesidad,94,28,23,94,28,23
+Cajamarca,Obesidad no especificada,34,6,13,34,6,13
+Cajamarca,Total,128,34,36,128,34,36
+Callao,Obesidad,10,4,9,10,4,9
+Callao,Obesidad no especificada,-,4,1,-,4,1
+Callao,Total,10,8,10,10,8,10
+Cusco,Obesidad,336,186,248,336,186,248
+Cusco,Obesidad no especificada,141,81,150,141,81,150
+Cusco,Total,477,267,398,477,267,398
+Huancavelica,Obesidad,2,2,1,2,2,1
+Huancavelica,Obesidad no especificada,-,-,1,-,-,1
+Huancavelica,Total,2,2,2,2,2,2
+Huánuco,Obesidad,20,10,22,20,10,22
+Huánuco,Obesidad no especificada,12,9,20,12,9,20
+Huánuco,Total,32,19,42,32,19,42
+Ica,Obesidad,192,57,103,192,57,103
+Ica,Obesidad no especificada,63,22,48,63,22,48
+Ica,Total,255,79,151,255,79,151
+Junín,Obesidad,125,79,89,125,79,89
+Junín,Obesidad no especificada,38,34,39,38,34,39
+Junín,Total,163,113,128,163,113,128
+La Libertad,Obesidad,23,17,13,23,17,13
+La Libertad,Obesidad no especificada,7,3,10,7,3,10
+La Libertad,Total,30,20,23,30,20,23
+Lambayeque,Obesidad,106,37,42,106,37,42
+Lambayeque,Obesidad no especificada,28,12,27,28,12,27
+Lambayeque,Total,134,49,69,134,49,69
+Lima DIRIS Centro,Obesidad,47,15,36,47,15,36
+Lima DIRIS Centro,Obesidad no especificada,12,5,19,12,5,19
+Lima DIRIS Centro,Total,59,20,55,59,20,55
+Lima DIRIS Este,Obesidad,12,5,9,12,5,9
+Lima DIRIS Este,Obesidad no especificada,4,1,2,4,1,2
+Lima DIRIS Este,Total,16,6,11,16,6,11
+Lima DIRIS Norte,Obesidad,15,10,10,15,10,10
+Lima DIRIS Norte,Obesidad no especificada,7,8,15,7,8,15
+Lima DIRIS Norte,Total,22,18,25,22,18,25
+Lima DIRIS Sur,Obesidad,10,5,23,10,5,23
+Lima DIRIS Sur,Obesidad no especificada,2,7,12,2,7,12
+Lima DIRIS Sur,Total,12,12,35,12,12,35
+Lima Provincias,Obesidad,4,6,10,4,6,10
+Lima Provincias,Obesidad no especificada,7,3,13,7,3,13
+Lima Provincias,Total,11,9,23,11,9,23
+Loreto,Obesidad,708,587,591,708,587,591
+Loreto,Obesidad no especificada,400,324,928,400,324,928
+Loreto,Total,1108,911,1519,1108,911,1519
+Madre De Dios,Obesidad,183,109,59,183,109,59
+Madre De Dios,Obesidad no especificada,102,51,67,102,51,67
+Madre De Dios,Total,285,160,126,285,160,126
+Moquegua,Obesidad,2,2,3,2,2,3
+Moquegua,Obesidad no especificada,1,-,3,1,-,3
+Moquegua,Total,3,2,6,3,2,6
+Pasco,Obesidad,34,22,34,34,22,34
+Pasco,Obesidad no especificada,13,8,22,13,8,22
+Pasco,Total,47,30,56,47,30,56
+Piura,Obesidad,164,52,50,164,52,50
+Piura,Obesidad no especificada,51,20,29,51,20,29
+Piura,Total,215,72,79,215,72,79
+Puno,Obesidad,2,-,-,2,-,-
+Puno,Obesidad no especificada,-,-,-,-,-,-
+Puno,Total,2,-,-,2,-,-
+San Martín,Obesidad,455,273,346,455,273,346
+San Martín,Obesidad no especificada,118,52,78,118,52,78
+San Martín,Total,573,325,424,573,325,424
+Tacna,Obesidad,4,4,-,4,4,-
+Tacna,Obesidad no especificada,1,1,1,1,1,1
+Tacna,Total,5,5,1,5,5,1
+Tumbes,Obesidad,10,3,10,10,3,10
+Tumbes,Obesidad no especificada,1,3,1,1,3,1
+Tumbes,Total,11,6,11,11,6,11
+Ucayali,Obesidad,460,296,396,460,296,396
+Ucayali,Obesidad no especificada,172,126,303,172,126,303
+Ucayali,Total,632,422,699,632,422,699"
+
+data_raw <- read.csv(text = csv_data_depto, check.names = FALSE)
+
+# 2. LIMPIEZA DE DATOS
+clean_val <- function(x) {
+  x <- as.character(x)
+  suppressWarnings(as.numeric(ifelse(x == "-", 0, x)))
+}
+
+data_clean <- data_raw %>%
+  # Renombrar columna con asterisco para evitar problemas
+  rename(`Agrupación subcategorías` = `Agrupación subcategorías*`) %>%
+  filter(`Agrupación subcategorías` != "Total") %>% 
+  mutate(across(c(`2019`, `2020`, `2021`), clean_val)) %>%
+  rowwise() %>%
+  mutate(Tendencia = list(c(`2019`, `2020`, `2021`))) %>%
+  ungroup() %>%
+  select(Departamento, `Agrupación subcategorías`, Tendencia, everything())
+
+# 3. PALETA DE COLORES (Datawrapper "OrRd" style -> Blue/Purple)
+# La misma paleta que solicitaste conservar
+get_color_heatmap <- function(value) {
+  if (is.na(value) || value == 0) return("#ffffff")
+  
+  # Cálculo dinámico del máximo para adaptar la escala a los nuevos datos
+  max_val <- max(data_clean %>% select(`2019`, `2020`, `2021`), na.rm = TRUE)
+  normalized <- min(value / max_val, 1)
+  
+  # Paleta original
+  f_color <- colorRamp(c("#fcfcbe", "#fdc78d", "#e45563", "#ac337b", "#2c1160")) 
+  rgb_val <- f_color(normalized)
+  rgb(rgb_val[1], rgb_val[2], rgb_val[3], maxColorValue = 255)
+}
+
+get_text_color <- function(value) {
+  if (is.na(value)) return("#000")
+  # Texto blanco dinámico si el valor es alto (fondo oscuro)
+  max_val <- max(data_clean %>% select(`2019`, `2020`, `2021`), na.rm = TRUE)
+  if (value > (max_val * 0.4)) "#ffffff" else "#000000"
+}
+
+# 4. TABLA INTERACTIVA
+table_widget <- reactable(
+  data_clean,
+  groupBy = "Departamento",
+  pagination = TRUE,
+  searchable = TRUE,
+  striped = FALSE,
+  highlight = TRUE,
+  defaultPageSize = 20,
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#1d81a2", # Azul cabecera Datawrapper
+      color = "#ffffff",
+      fontWeight = "bold",
+      borderBottom = "2px solid #333",
+      fontSize = "13px"
+    ),
+    cellStyle = list(
+      fontFamily = "Roboto, Arial, sans-serif",
+      fontSize = "13px",
+      verticalAlign = "middle"
+    ),
+    rowGroupStyle = list(fontWeight = "bold", backgroundColor = "#f9f9f9")
+  ),
+  columns = list(
+    Departamento = colDef(minWidth = 150),
+    `Agrupación subcategorías` = colDef(name = "Subcategoría", minWidth = 180),
+    
+    # Ocultar columnas auxiliares del CSV original si existen (X.1, X.2, etc.)
+    X.1 = colDef(show = FALSE),
+    X.2 = colDef(show = FALSE),
+    X.3 = colDef(show = FALSE),
+    
+    Tendencia = colDef(
+      minWidth = 100,
+      align = "center",
+      cell = function(value) {
+        sparkline(value, type = "line", width = 80, height = 25, 
+                  lineColor = "#18a1cd", # Azul claro Datawrapper
+                  fillColor = "#d1e5f0", # Relleno suave
+                  lineWidth = 2,
+                  spotColor = "#2c1160", minSpotColor = "#2c1160", maxSpotColor = "#2c1160",
+                  spotRadius = 2)
+      }
+    ),
+    
+    `2019` = colDef(width = 60, style = function(v) list(background = get_color_heatmap(v), color = get_text_color(v), fontWeight = "bold")),
+    `2020` = colDef(width = 60, style = function(v) list(background = get_color_heatmap(v), color = get_text_color(v), fontWeight = "bold")),
+    `2021` = colDef(width = 60, style = function(v) list(background = get_color_heatmap(v), color = get_text_color(v), fontWeight = "bold"))
+  )
+)
+
+# 5. RENDERIZADO
+browsable(
+  tagList(
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; color: #333; margin-bottom: 10px;",
+      h3("Obesidad en población afroperuana por departamentos 2019-2021", 
+         style = "font-weight: 700; margin-bottom: 5px; font-size: 18px;"),
+      p("En el ámbito de intervención de las DIRIS y DIRESA.",
+        style = "font-size: 12px; color: #666; margin-top:0;")
+    ),
+    table_widget %>% spk_add_deps()
+  )
+)
+```
+## Datos Fuente
+
+```{r}
+make_download_table(data_clean, "obesidad_amazonia_deptos")
+```
+
+
+
+## **Obesidad en poblaciones andinas 2019-2021**
+
+::: panel-tabset
+
+## Gráfico
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sparkline)
+
+# 1. DATOS (Extraídos de data-tBELg.csv)
+csv_data_obesidad_gen_v2 <- "Agrupación de subcategorías,2019,2020,2021
+Obesidad debida a exceso de calorías,16267,7659,6447
+Obesidad inducida por drogas,23,1,18
+Obesidad extrema con hipoventilación,12,3,6
+Otros tipos de obesidad,7,3,14
+Obesidad No Especificada,6193,2714,4396
+Obesidad Grado I,278,293,587
+Obesidad Grado II,353,138,193
+Obesidad Grado III,75,33,59"
+
+data_raw <- read.csv(text = csv_data_obesidad_gen_v2, check.names = FALSE)
+
+# 2. LIMPIEZA
+clean_val <- function(x) {
+  x <- as.character(x)
+  suppressWarnings(as.numeric(ifelse(x == "-", 0, x)))
+}
+
+data_clean <- data_raw %>%
+  mutate(across(c(`2019`, `2020`, `2021`), clean_val)) %>%
+  rowwise() %>%
+  mutate(Tendencia = list(c(`2019`, `2020`, `2021`))) %>%
+  ungroup() %>%
+  select(`Agrupación de subcategorías`, Tendencia, everything())
+
+# Calcular el valor máximo global para escalar las barras correctamente con los nuevos datos
+max_val_dataset <- max(data_clean %>% select(`2019`, `2020`, `2021`), na.rm = TRUE)
+
+# 3. FUNCIÓN DE BARRA PROPORCIONAL
+bar_chart <- function(label, value, max_value, color) {
+  width <- if (max_value > 0) paste0(value / max_value * 100, "%") else "0%"
+  if (value > 0 && value / max_value * 100 < 1) width <- "1px"
+  
+  display_label <- if (value == 0) "-" else format(value, big.mark = ",")
+  
+  div(
+    style = "display: flex; align-items: center; justify-content: start;",
+    div(style = "width: 50px; text-align: right; margin-right: 8px; font-weight: bold; font-size: 12px;", display_label),
+    div(style = paste0("width:", width, "; background-color:", color, "; height: 14px; transition: width 0.3s; border-radius: 2px;"))
+  )
+}
+
+# 4. TABLA INTERACTIVA
+table_widget <- reactable(
+  data_clean,
+  pagination = FALSE,
+  searchable = FALSE,
+  striped = TRUE,
+  highlight = TRUE,
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#ffffff",
+      color = "#333",
+      fontWeight = "bold",
+      borderBottom = "2px solid #333",
+      fontSize = "13px"
+    ),
+    cellStyle = list(
+      fontFamily = "Roboto, Arial, sans-serif",
+      fontSize = "13px",
+      verticalAlign = "middle"
+    )
+  ),
+  columns = list(
+    `Agrupación de subcategorías` = colDef(minWidth = 220, style = list(fontWeight = "bold")),
+    
+    Tendencia = colDef(
+      minWidth = 80,
+      align = "center",
+      cell = function(value) {
+        sparkline(value, type = "line", width = 60, height = 20, 
+                  lineColor = "#006d5b", # Verde azulado oscuro
+                  fillColor = "#e0f2f1", # Fondo suave
+                  lineWidth = 1.5,
+                  spotColor = "#006d5b", minSpotColor = "#006d5b", maxSpotColor = "#006d5b",
+                  spotRadius = 2)
+      }
+    ),
+    
+    `2019` = colDef(
+      name = "2019",
+      minWidth = 130,
+      cell = function(value) bar_chart(value, value, max_value = max_val_dataset, color = "#80cdc1") 
+    ),
+    `2020` = colDef(
+      name = "2020",
+      minWidth = 130,
+      cell = function(value) bar_chart(value, value, max_value = max_val_dataset, color = "#35978f") 
+    ),
+    `2021` = colDef(
+      name = "2021",
+      minWidth = 130,
+      cell = function(value) bar_chart(value, value, max_value = max_val_dataset, color = "#01665e") # Verde más oscuro
+    )
+  )
+)
+
+# 5. RENDERIZADO
+browsable(
+  tagList(
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; color: #333; margin-bottom: 15px;",
+      h3("Obesidad por subcategorías (General) 2019-2021", 
+         style = "font-weight: 700; margin-bottom: 5px; font-size: 18px;"),
+      p("Comparación del volumen de casos reportados.",
+        style = "font-size: 12px; color: #666; margin-top:0;")
+    ),
+    table_widget %>% spk_add_deps()
+  )
+)
+```
+
+## Datos Fuente
+
+```{r}
+make_download_table(data_clean, "obesidad_andina_subcategorias")
+```
+:::
+
+La subcategoría Obesidad debida a exceso de calorías tiene más registros de casos en la población andina, el 2019 y el 2020 alcanzó entre el 70% y 71%. El 2021que se redujo a 55% y la Obesidad No Especificada se elevó a 38%.
+
+::: panel-tabset
+
+## Gráfico
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-height: 8
+#| fig-width: 9
+
+library(tidyverse)
+library(plotly)
+library(scales)
+library(htmltools)
+
+# 1. CARGA DE DATOS (Adaptado para data-C16YT.csv)
+csv_data_obesidad_final <- "Año,Agrupación de subcategorías,M,F
+2019,Obesidad,4222,12087
+2019,Obesidad no especificada,1163,5736
+2019,Total,5385,17823
+2020,Obesidad,1856,5810
+2020,Obesidad no especificada,566,2612
+2020,Total,2422,8422
+2021,Obesidad,1523,4962
+2021,Obesidad no especificada,1072,4163
+2021,Total,2595,9125"
+
+data_raw <- read.csv(text = csv_data_obesidad_final, check.names = FALSE)
+
+# 2. TRANSFORMACIÓN
+plot_data <- data_raw %>%
+  # Excluir totales si se desea visualizar solo las categorías específicas
+  filter(`Agrupación de subcategorías` != "Total") %>% 
+  pivot_longer(cols = c("M", "F"), names_to = "Sexo", values_to = "Casos") %>%
+  mutate(
+    # Lógica de Pirámide: Hombres negativos
+    Casos_Plot = ifelse(Sexo == "M", -Casos, Casos),
+    
+    # Factores para orden
+    Año = factor(Año, levels = c(2021, 2020, 2019)), # Orden inverso para que 2019 salga arriba o abajo según coord_flip
+    Categoria = factor(`Agrupación de subcategorías`),
+    
+    # Texto para Tooltip
+    Tooltip_Text = paste0(
+      "<b>", Categoria, "</b><br>",
+      "Año: ", Año, "<br>",
+      "Sexo: ", ifelse(Sexo == "M", "Masculino", "Femenino"), "<br>",
+      "Casos: ", format(Casos, big.mark = " ")
+    )
+  )
+
+# 3. COLORES SOLICITADOS (NO CAMBIAR)
+# Azul para Varones, Rosa para Mujeres
+color_male <- "#1f77b4"  # Azul clásico
+color_female <- "#e377c2" # Rosa/Fucsia
+
+# 4. GRÁFICO BASE
+g_piramide <- ggplot(plot_data, aes(x = Año, y = Casos_Plot, fill = Sexo)) +
+  geom_col(aes(text = Tooltip_Text), width = 0.7) +
+  
+  coord_flip() +
+  
+  # Facetas por Categoría (Obesidad vs No especificada)
+  facet_wrap(~Categoria, ncol = 1, scales = "free_x") + 
+  
+  scale_fill_manual(values = c("M" = color_male, "F" = color_female), 
+                    labels = c("M" = "Varones", "F" = "Mujeres")) +
+  
+  # Eje Y Simétrico (Valores positivos visualmente)
+  scale_y_continuous(
+    labels = function(x) number(abs(x), big.mark = " "),
+    n.breaks = 5
+  ) +
+  
+  labs(
+    x = "",
+    y = "Número de Casos",
+    fill = ""
+  ) +
+  
+  theme_minimal() +
+  theme(
+    strip.text = element_text(face = "bold", size = 12, color = "#333", hjust = 0),
+    strip.background = element_rect(fill = "#f0f0f0", color = NA),
+    panel.grid.major.y = element_blank(),
+    legend.position = "top"
+  )
+
+# 5. INTERACTIVIDAD
+p <- ggplotly(g_piramide, tooltip = "text", height = 550) %>%
+  layout(
+    legend = list(orientation = "h", xanchor = "center", x = 0.5, y = 1.1),
+    margin = list(t = 50, l = 70, b = 20)
+  )
+
+# --- CORRECCIÓN DE CERO CENTRADO ---
+# Forzar que el rango del eje X en cada faceta sea simétrico [-max, +max]
+for(i in seq_along(p$x$layout)) {
+  if(grepl("xaxis", names(p$x$layout)[i])) {
+    current_range <- p$x$layout[[i]]$range
+    max_abs <- max(abs(current_range))
+    p$x$layout[[i]]$range <- c(-max_abs, max_abs)
+  }
+}
+
+# 6. RENDERIZADO FINAL CON TÍTULO Y PIE DE GRÁFICO
+browsable(
+  tagList(
+    # Título
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; color: #333; margin-bottom: 20px;",
+      h3("Obesidad consolidada por sexo 2019-2021", 
+         style = "font-weight: 700; font-size: 20px; margin-bottom: 5px;"),
+      p("Comparativo de casos reportados entre varones y mujeres por subcategoría.", 
+        style = "font-size: 14px; color: #666; margin-top: 0;")
+    ),
+    
+    # Gráfico
+    p %>% config(displayModeBar = FALSE),
+    
+    # Pie de Gráfico Detallado
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; font-size: 11px; color: #666; margin-top: 20px; line-height: 1.5; border-top: 1px solid #eee; padding-top: 10px;",
+      p("Considera los establecimientos de salud del MINSA, EsSalud, FFAA y policiales y privados.", style = "margin: 0 0 5px 0;"),
+      p(strong("Obesidad"), " considera las subcategorías: Obesidad debida a exceso de calorías, Obesidad extrema con hipoventilación.", style = "margin: 0 0 5px 0;"),
+      p(strong("Obesidad no especificada"), " además comprende: Obesidad Grado I, Obesidad Grado II y Obesidad Grado III.", style = "margin: 0;")
+    )
+  )
+)
+```
+
+## Datos Fuente
+
+```{r}
+make_download_table(plot_data, "obesidad_andinos_sexo")
+```
+:::
+
+Las mujeres incrementaron en más del triple el número de casos de obesidad a los hombres.
+
+::: panel-tabset
+
+## Gráfico
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sparkline)
+
+# 1. DATOS (Extraídos de data-5wqbd.csv)
+csv_data_obesidad_final_curso <- "Categoría,curso de vida,2019,2020,2021
+Obesidad,< 01m,8,,-
+Obesidad,01-11m,255,166,142
+Obesidad,01-05a,268,217,117
+Obesidad,06-11a,477,228,168
+Obesidad,12-17a,734,322,379
+Obesidad,18-29a,2860,1641,1476
+Obesidad,30-59a,8339,3740,3001
+Obesidad,60a >,3368,1352,1202
+Obesidad,Subtotal,16309,7666,6485
+Obesidad no especificada,< 01m,2,1,3
+Obesidad no especificada,01-11m,34,40,47
+Obesidad no especificada,01-05a,62,68,118
+Obesidad no especificada,06-11a,204,109,321
+Obesidad no especificada,12-17a,195,68,126
+Obesidad no especificada,18-29a,925,539,787
+Obesidad no especificada,30-59a,4070,1812,2823
+Obesidad no especificada,60a >,701,230,230
+Obesidad no especificada,Subtotal,6193,2867,4455"
+
+data_raw <- read.csv(text = csv_data_obesidad_final_curso, check.names = FALSE)
+
+# 2. LIMPIEZA
+clean_val <- function(x) {
+  x <- as.character(x)
+  # Convertir vacíos, guiones y NAs a 0
+  suppressWarnings(as.numeric(ifelse(x %in% c("-", "", NA), 0, x)))
+}
+
+data_clean <- data_raw %>%
+  filter(`curso de vida` != "Subtotal") %>% 
+  mutate(across(c(`2019`, `2020`, `2021`), clean_val)) %>%
+  # Asegurar que no queden NAs después de la conversión
+  mutate(across(c(`2019`, `2020`, `2021`), ~replace_na(., 0))) %>%
+  rowwise() %>%
+  mutate(Tendencia = list(c(`2019`, `2020`, `2021`))) %>%
+  ungroup() %>%
+  select(`Categoría`, `curso de vida`, Tendencia, everything())
+
+# Calcular máximo global para la escala
+max_val_global <- max(data_clean %>% select(`2019`, `2020`, `2021`), na.rm = TRUE)
+
+# 3. FUNCIÓN DE BARRA PROPORCIONAL
+bar_chart <- function(label, value, color) {
+  width <- if (max_val_global > 0) paste0(value / max_val_global * 100, "%") else "0%"
+  if (value > 0 && value / max_val_global * 100 < 1) width <- "1px"
+  
+  display_label <- if (value == 0) "-" else format(value, big.mark = ",")
+  
+  div(
+    style = "display: flex; align-items: center; justify-content: start;",
+    div(style = "width: 45px; text-align: right; margin-right: 8px; font-weight: bold; font-size: 12px;", display_label),
+    div(style = paste0("width:", width, "; background-color:", color, "; height: 14px; transition: width 0.3s;"))
+  )
+}
+
+# 4. TABLA INTERACTIVA
+table_widget <- reactable(
+  data_clean,
+  groupBy = "Categoría",
+  pagination = FALSE,
+  searchable = FALSE,
+  striped = TRUE,
+  highlight = TRUE,
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#ffffff",
+      color = "#333",
+      fontWeight = "bold",
+      borderBottom = "2px solid #333",
+      fontSize = "13px"
+    ),
+    cellStyle = list(
+      fontFamily = "Roboto, Arial, sans-serif",
+      fontSize = "13px",
+      verticalAlign = "middle"
+    ),
+    rowGroupStyle = list(fontWeight = "bold", backgroundColor = "#f0f0f0")
+  ),
+  columns = list(
+    `Categoría` = colDef(minWidth = 150),
+    `curso de vida` = colDef(name = "Curso de Vida", minWidth = 120),
+    
+    Tendencia = colDef(
+      minWidth = 80,
+      align = "center",
+      cell = function(value) {
+        sparkline(value, type = "line", width = 60, height = 20, 
+                  lineColor = "#d03c25", # Rojo Oscuro
+                  fillColor = "#feebe2", 
+                  lineWidth = 1.5,
+                  spotColor = "#d03c25", minSpotColor = "#d03c25", maxSpotColor = "#d03c25",
+                  spotRadius = 2)
+      }
+    ),
+    
+    `2019` = colDef(
+      name = "2019",
+      minWidth = 120,
+      cell = function(value) bar_chart(value, value, color = "#ff6343") # Naranja Claro
+    ),
+    `2020` = colDef(
+      name = "2020",
+      minWidth = 120,
+      cell = function(value) bar_chart(value, value, color = "#ee883e") # Naranja Medio
+    ),
+    `2021` = colDef(
+      name = "2021",
+      minWidth = 120,
+      cell = function(value) bar_chart(value, value, color = "#d03c25") # Rojo Oscuro
+    )
+  )
+)
+
+# 5. RENDERIZADO
+browsable(
+  tagList(
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; color: #333; margin-bottom: 15px;",
+      h3("Obesidad consolidada por curso de vida 2019-2021", 
+         style = "font-weight: 700; margin-bottom: 5px; font-size: 18px;"),
+      p("Comparación de casos reportados según grupo etario.",
+        style = "font-size: 12px; color: #666; margin-top:0;")
+    ),
+    table_widget %>% spk_add_deps()
+  )
+)
+```
+
+```{r}
+make_download_table(data_clean, "obesidad_andinos_edad")
+```
+
+:::
+
+En el caso de la obesidad en la población andina, los adultos de 30 a 59 años, representaron la mitad o más de la mitad de los casos que afecta a estas poblaciones. El 2019, el 53%; el 2020, el 51% y el 2021, el 50%. Es seguido por los jóvenes de 18 a 29 años, el 2019, 16%; el 2020, 9% y el 2021 con 10% del total de casos que se registran en las etnias andinas.
+
+::: panel-tabset
+
+## Tabla dinámica
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sparkline)
+
+# 1. DATOS (Extraídos de data-Ay4w1.csv)
+csv_data_depto_v2 <- "Departamento,Agrupación subcategorías,2019,2020,2021
+Amazonas,Obesidad,-,1,-
+Amazonas,Obesidad no especificada,2,-,2
+Amazonas,Total,2,1,2
+Ancash,Obesidad,5590,3316,2577
+Ancash,Obesidad no especificada,2104,1290,1783
+Ancash,Total,7694,4606,4360
+Apurímac,Obesidad,25,19,22
+Apurímac,Obesidad no especificada,11,8,15
+Apurímac,Total,36,27,37
+Arequipa,Obesidad,55,38,32
+Arequipa,Obesidad no especificada,34,19,16
+Arequipa,Total,89,57,48
+Ayacucho,Obesidad,5666,2074,1722
+Ayacucho,Obesidad no especificada,2330,832,1654
+Ayacucho,Total,7996,2906,3376
+Cajamarca,Obesidad,60,37,17
+Cajamarca,Obesidad no especificada,22,17,14
+Cajamarca,Total,82,54,31
+Callao,Obesidad,14,3,13
+Callao,Obesidad no especificada,7,4,6
+Callao,Total,21,7,19
+Cusco,Obesidad,2096,938,989
+Cusco,Obesidad no especificada,960,392,670
+Cusco,Total,3056,1330,1659
+Huancavelica,Obesidad,2466,1336,1146
+Huancavelica,Obesidad no especificada,850,490,697
+Huancavelica,Total,3316,1826,1843
+Huánuco,Obesidad,3,2,6
+Huánuco,Obesidad no especificada,3,3,1
+Huánuco,Total,6,5,7
+Ica,Obesidad,47,20,39
+Ica,Obesidad no especificada,17,13,11
+Ica,Total,64,33,50
+Junín,Obesidad,1223,599,634
+Junín,Obesidad no especificada,399,219,375
+Junín,Total,1622,818,1009
+La Libertad,Obesidad,7,6,12
+La Libertad,Obesidad no especificada,3,3,3
+La Libertad,Total,10,9,15
+Lambayeque,Obesidad,3447,882,1093
+Lambayeque,Obesidad no especificada,1273,369,679
+Lambayeque,Total,4720,1251,1772
+Lima DIRIS Centro,Obesidad,62,40,73
+Lima DIRIS Centro,Obesidad no especificada,20,12,39
+Lima DIRIS Centro,Total,82,52,112
+Lima DIRIS Este,Obesidad,27,11,18
+Lima DIRIS Este,Obesidad no especificada,14,3,9
+Lima DIRIS Este,Total,41,14,27
+Lima DIRIS Norte,Obesidad,39,26,59
+Lima DIRIS Norte,Obesidad no especificada,13,16,32
+Lima DIRIS Norte,Total,52,42,91
+Lima DIRIS Sur,Obesidad,30,18,31
+Lima DIRIS Sur,Obesidad no especificada,19,5,29
+Lima DIRIS Sur,Total,49,23,60
+Lima Provincias,Obesidad,31,4,11
+Lima Provincias,Obesidad no especificada,6,6,12
+Lima Provincias,Total,37,10,23
+Loreto,Obesidad,-,4,3
+Loreto,Obesidad no especificada,1,-,3
+Loreto,Total,1,4,6
+Madre De Dios,Obesidad,5,8,7
+Madre De Dios,Obesidad no especificada,1,2,9
+Madre De Dios,Total,6,10,16
+Moquegua,Obesidad,55,25,11
+Moquegua,Obesidad no especificada,36,13,14
+Moquegua,Total,91,38,25
+Pasco,Obesidad,1447,587,622
+Pasco,Obesidad no especificada,524,242,427
+Pasco,Total,1971,829,1049
+Piura,Obesidad,43,15,30
+Piura,Obesidad no especificada,13,6,11
+Piura,Total,56,21,41
+Puno,Obesidad,8254,3577,3302
+Puno,Obesidad no especificada,3730,1729,3004
+Puno,Total,11984,5306,6306
+San Martín,Obesidad,30,17,29
+San Martín,Obesidad no especificada,5,4,7
+San Martín,Total,35,21,36
+Tacna,Obesidad,43,26,17
+Tacna,Obesidad no especificada,26,10,23
+Tacna,Total,69,36,40
+Tumbes,Obesidad,4,2,2
+Tumbes,Obesidad no especificada,-,-,1
+Tumbes,Total,4,2,3
+Ucayali,Obesidad,6,1,2
+Ucayali,Obesidad no especificada,3,3,4
+Ucayali,Total,9,4,6"
+
+data_raw <- read.csv(text = csv_data_depto_v2, check.names = FALSE)
+
+# 2. LIMPIEZA
+clean_val <- function(x) {
+  x <- as.character(x)
+  suppressWarnings(as.numeric(ifelse(x == "-", 0, x)))
+}
+
+data_clean <- data_raw %>%
+  filter(`Agrupación subcategorías` != "Total") %>% 
+  mutate(across(c(`2019`, `2020`, `2021`), clean_val)) %>%
+  rowwise() %>%
+  mutate(Tendencia = list(c(`2019`, `2020`, `2021`))) %>%
+  ungroup() %>%
+  select(Departamento, `Agrupación subcategorías`, Tendencia, everything())
+
+# 3. PALETA DE COLORES ORIGINAL (Mantenida)
+get_color_heatmap <- function(value) {
+  if (is.na(value) || value == 0) return("#ffffff")
+  
+  # Cálculo dinámico del máximo con los nuevos datos (aprox 8000)
+  max_val <- max(data_clean %>% select(`2019`, `2020`, `2021`), na.rm = TRUE)
+  normalized <- min(value / max_val, 1)
+  
+  # Paleta Datawrapper "OrRd" Style
+  f_color <- colorRamp(c("#fcfcbe", "#fdc78d", "#e45563", "#ac337b", "#2c1160")) 
+  rgb_val <- f_color(normalized)
+  rgb(rgb_val[1], rgb_val[2], rgb_val[3], maxColorValue = 255)
+}
+
+get_text_color <- function(value) {
+  if (is.na(value)) return("#000")
+  max_val <- max(data_clean %>% select(`2019`, `2020`, `2021`), na.rm = TRUE)
+  # Texto blanco solo si el color de fondo es oscuro (valores altos)
+  if (value > (max_val * 0.4)) "#ffffff" else "#000000"
+}
+
+# 4. TABLA INTERACTIVA
+table_widget <- reactable(
+  data_clean,
+  groupBy = "Departamento",
+  pagination = TRUE,
+  searchable = TRUE,
+  striped = FALSE,
+  highlight = TRUE,
+  defaultPageSize = 20,
+  theme = reactableTheme(
+    headerStyle = list(
+      backgroundColor = "#1d81a2", # Azul cabecera
+      color = "#ffffff",
+      fontWeight = "bold",
+      borderBottom = "2px solid #333",
+      fontSize = "13px"
+    ),
+    cellStyle = list(
+      fontFamily = "Roboto, Arial, sans-serif",
+      fontSize = "13px",
+      verticalAlign = "middle"
+    ),
+    rowGroupStyle = list(fontWeight = "bold", backgroundColor = "#f9f9f9")
+  ),
+  columns = list(
+    Departamento = colDef(minWidth = 150),
+    `Agrupación subcategorías` = colDef(name = "Subcategoría", minWidth = 180),
+    
+    Tendencia = colDef(
+      minWidth = 100,
+      align = "center",
+      cell = function(value) {
+        sparkline(value, type = "line", width = 80, height = 25, 
+                  lineColor = "#18a1cd", # Azul claro
+                  fillColor = "#d1e5f0", # Relleno suave
+                  lineWidth = 2,
+                  spotColor = "#2c1160", minSpotColor = "#2c1160", maxSpotColor = "#2c1160",
+                  spotRadius = 2)
+      }
+    ),
+    
+    `2019` = colDef(width = 60, style = function(v) list(background = get_color_heatmap(v), color = get_text_color(v), fontWeight = "bold")),
+    `2020` = colDef(width = 60, style = function(v) list(background = get_color_heatmap(v), color = get_text_color(v), fontWeight = "bold")),
+    `2021` = colDef(width = 60, style = function(v) list(background = get_color_heatmap(v), color = get_text_color(v), fontWeight = "bold"))
+  )
+)
+
+# 5. RENDERIZADO
+browsable(
+  tagList(
+    div(
+      style = "font-family: Roboto, Arial, sans-serif; color: #333; margin-bottom: 10px;",
+      h3("Obesidad en población general por departamentos 2019-2021", 
+         style = "font-weight: 700; margin-bottom: 5px; font-size: 18px;"),
+      p("En el ámbito de intervención de las DIRIS y DIRESA.",
+        style = "font-size: 12px; color: #666; margin-top:0;")
+    ),
+    table_widget %>% spk_add_deps()
+  )
+)
+```
+
+## Datos Fuente
+
+```{r}
+make_download_table(data_clean, "obesidad_andina_deptos")
+```
+:::
+
+El 2019 Ayacucho, Ancash y Puno son las regiones que registran mayor número de casos. El 2020 y el 2021 son Ancash, Ayacucho y Puno.
+
