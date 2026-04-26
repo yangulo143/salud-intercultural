@@ -80,30 +80,26 @@ Encontrará contenido sobre algunas enfermedades que afectan a los pueblos de la
 ::: {.g-col-6}
 ### 🌱 [Fallecidos por etnicidad](Produccion_cientifica_coca.html)
 **Fecha:** Diciembre 2025
-**Datos:** Scopus 
-Un análisis completo de la producción científica global sobre la especie vegetal Erythroxylum coca (coca), incluyendo tendencias temporales, mapas de colaboración y nubes de palabras clave.
+**Datos:** HISS MINSA
 :::
 
 ::: {.g-col-6}
 ### 🌱 [Atendidos por pertinencia étnica](Produccion_cientifica_ayahuasca.html)
 **Fecha:** Diciembre 2025
-**Datos:** Scopus 
-Un análisis completo de la producción científica global sobre el brebaje de Banisteriopsis caapi y Psychotria viridis (Ayahuasca), incluyendo tendencias temporales, mapas de colaboración y nubes de palabras clave.
+**Datos:** HISS MINSA
 :::
 
 ::: {.g-col-6}
 ### 🌱 [Atenciones por etnicidad](Produccion_cientifica_sacha_inchi.html)
 **Fecha:** Diciembre 2025
-**Datos:** Scopus 
-Un análisis completo de la producción científica global sobre la especie vegetal Plukenetia volubilis (Sacha Inchi), incluyendo tendencias temporales, mapas de colaboración y nubes de palabras clave. 
+**Datos:** HISS MINSA
 
 :::
 
 ::: {.g-col-6}
 ### 🌱 [Enfermedades en poblaciones indigenas y afro](Produccion_cientifica_maca.html)
 **Fecha:** Diciembre 2025
-**Datos:** Scopus 
-Un análisis completo de la producción científica global sobre la especie vegetal Lepidium meyenii (Maca), incluyendo tendencias temporales, mapas de colaboración y nubes de palabras clave. 
+**Datos:** HISS MINSA 
 :::
 
 
@@ -111,8 +107,7 @@ Un análisis completo de la producción científica global sobre la especie vege
 ::: {.g-col-6}
 ### 🌱 [Mortalidad materna por etnicidad](Produccion_cientifica_una_de_gato.html)
 **Fecha:** Diciembre 2025
-**Datos:** Scopus 
-Un análisis completo de la producción científica global sobre la especie vegetal Uncaria tomentosa (Uña de gato), incluyendo tendencias temporales, mapas de colaboración y nubes de palabras clave. 
+**Datos:** HISS MINSA
 :::
 
 :::::
