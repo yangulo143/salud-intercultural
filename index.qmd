@@ -69,8 +69,8 @@ Encontrará contenido sobre algunas enfermedades que afectan a los pueblos de la
 ::: {.g-col-6}
 ### 🌱 [Obesidad](obesidad.html)
 **Fecha:** Diciembre 2025
-**Datos:** Scopus 
-Un análisis completo de la producción científica global sobre la especie vegetal Uncaria tomentosa (Uña de gato), incluyendo tendencias temporales, mapas de colaboración y nubes de palabras clave. 
+**Datos:** HISS MINSA
+
 :::
 
 :::::
